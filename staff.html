@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Portal | Twende Tours</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="staff-styles.css">
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+        <i data-lucide="menu" width="24" height="24"></i>
+    </button>
+
+    <div class="staff-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i data-lucide="compass" width="32" height="32"></i>
+                    <div>
+                        <div class="logo-main">Twende Tours</div>
+                        <div class="logo-sub">STAFF PORTAL</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">OPERATIONS</div>
+                    <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                        <i data-lucide="layout-dashboard" width="20" height="20"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('socialInbox')">
+                        <i data-lucide="message-square" width="20" height="20"></i>
+                        <span>Social Inbox</span>
+                        <span class="nav-badge" id="inboxBadge">0</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('fleetStatus')">
+                        <i data-lucide="truck" width="20" height="20"></i>
+                        <span>Fleet Status</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('bookingCalendar')">
+                        <i data-lucide="calendar" width="20" height="20"></i>
+                        <span>Booking Calendar</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('newBooking')">
+                        <i data-lucide="plus-circle" width="20" height="20"></i>
+                        <span>New Booking</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">
+                    <i data-lucide="log-out" width="20" height="20"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <h1 id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="top-bar-right">
+                    <button class="icon-btn">
+                        <i data-lucide="bell" width="20" height="20"></i>
+                        <span class="notification-badge" id="notifBadge">5</span>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <div class="user-name" id="staffName">Receptionist</div>
+                            <div class="user-role">Operations</div>
+                        </div>
+                        <div class="user-avatar" id="userAvatar">R</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">
+                            <i data-lucide="users" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statNewLeads">0</div>
+                            <div class="stat-label">New Leads</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i data-lucide="alert-circle" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statUnreplied">0</div>
+                            <div class="stat-label">Unreplied</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i data-lucide="calendar-check" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statActiveBookings">0</div>
+                            <div class="stat-label">Active Bookings</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i data-lucide="truck" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statVehiclesAvailable">0</div>
+                            <div class="stat-label">Vehicles Available</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Recent Inquiries</h2>
+                            <button class="btn-text" onclick="showSection('socialInbox')">View All</button>
+                        </div>
+                        <div id="recentInquiries">
+                            <!-- Loaded via JS -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Today's Schedule</h2>
+                        </div>
+                        <div id="todaysSchedule">
+                            <!-- Loaded via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Social Inbox Section -->
+            <section id="socialInboxSection" class="content-section hidden">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">
+                            <i data-lucide="users" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="inboxStatNew">0</div>
+                            <div class="stat-label">New Leads</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i data-lucide="alert-circle" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="inboxStatUnreplied">0</div>
+                            <div class="stat-label">Unreplied</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i data-lucide="calendar-check" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="inboxStatActive">0</div>
+                            <div class="stat-label">Active Bookings</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i data-lucide="truck" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="inboxStatVehicles">0</div>
+                            <div class="stat-label">Vehicles Available</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Omnichannel Social Inbox</h2>
+                    </div>
+                    <div class="inbox-filters">
+                        <button class="filter-btn active" onclick="filterInbox('all')">All Inquiries</button>
+                        <button class="filter-btn" onclick="filterInbox('unreplied')">Unreplied</button>
+                        <button class="filter-btn" onclick="filterInbox('WhatsApp')">WhatsApp</button>
+                        <button class="filter-btn" onclick="filterInbox('Instagram')">Instagram</button>
+                        <button class="filter-btn" onclick="filterInbox('TikTok')">TikTok</button>
+                        <button class="filter-btn" onclick="filterInbox('Website')">Website</button>
+                    </div>
+                    <div id="inboxList">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Fleet Status Section -->
+            <section id="fleetStatusSection" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Fleet Control</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>VEHICLE</th>
+                                    <th>REGISTRATION</th>
+                                    <th>CAPACITY</th>
+                                    <th>CURRENT STATUS</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleetTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Booking Calendar Section -->
+            <section id="bookingCalendarSection" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Booking Calendar</h2>
+                        <div class="calendar-legend">
+                            <span class="legend-item"><span class="legend-dot confirmed"></span> Confirmed</span>
+                            <span class="legend-item"><span class="legend-dot pending"></span> Pending</span>
+                            <span class="legend-item"><span class="legend-dot completed"></span> Completed</span>
+                        </div>
+                    </div>
+                    <div id="staffCalendar"></div>
+                </div>
+            </section>
+
+            <!-- New Booking Section -->
+            <section id="newBookingSection" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Create New Booking</h2>
+                    </div>
+                    <form onsubmit="createNewBooking(event)" class="booking-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Client Name *</label>
+                                <input type="text" id="newBookingClient" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Client Email *</label>
+                                <input type="email" id="newBookingEmail" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Client Phone *</label>
+                                <input type="tel" id="newBookingPhone" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Destination *</label>
+                                <input type="text" id="newBookingDestination" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Select Vehicle *</label>
+                                <select id="newBookingVehicle" class="form-control" required onchange="checkVehicleAvailability()">
+                                    <option value="">Choose a vehicle...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Date *</label>
+                                <input type="date" id="newBookingStartDate" class="form-control" required onchange="checkVehicleAvailability()">
+                            </div>
+                            <div class="form-group">
+                                <label>End Date *</label>
+                                <input type="date" id="newBookingEndDate" class="form-control" required onchange="checkVehicleAvailability()">
+                            </div>
+                            <div class="form-group">
+                                <label>Number of Travelers *</label>
+                                <input type="number" id="newBookingTravelers" class="form-control" min="1" required>
+                            </div>
+                        </div>
+                        
+                        <div id="availabilityCheck" class="availability-check hidden">
+                            <!-- Availability result shown here -->
+                        </div>
+
+                        <div class="form-group">
+                            <label>Special Requirements</label>
+                            <textarea id="newBookingNotes" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-outline" onclick="showSection('dashboard')">Cancel</button>
+                            <button type="submit" class="btn-primary" id="createBookingBtn" disabled>
+                                <i data-lucide="check" width="16" height="16"></i>
+                                Create Booking
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="backend.js"></script>
+    <script src="staff.js"></script>
+</body>
+</html>

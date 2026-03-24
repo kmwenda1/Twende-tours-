@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Dashboard - Twende Tours</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>Jambo, Client!</h1>
+            <button id="logout">Logout</button>
+        </header>
+        <section class="fleet-discovery">
+            <h2>Fleet Discovery</h2>
+            <div id="fleetCards" class="fleet-grid"></div>
+        </section>
+        <button id="requestSafari">Request New Safari</button>
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">×</span>
+                <h2>Request New Safari</h2>
+                <input type="text" id="destination" placeholder="Destination" required>
+                <textarea id="notes" placeholder="Notes"></textarea>
+                <button id="submitRequest">Submit</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

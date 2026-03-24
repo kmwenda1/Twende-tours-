@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Twende Tours</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-styles.css">
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+        <i data-lucide="menu" width="24" height="24"></i>
+    </button>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i data-lucide="compass" width="32" height="32"></i>
+                    <div>
+                        <div class="logo-main">Twende Tours</div>
+                        <div class="logo-sub">ADMIN PORTAL</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">OVERVIEW</div>
+                    <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                        <i data-lucide="pie-chart" width="20" height="20"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('userManagement')">
+                        <i data-lucide="users" width="20" height="20"></i>
+                        <span>User Management</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">ANALYTICS</div>
+                    <a href="#" class="nav-item" onclick="showSection('performanceReports')">
+                        <i data-lucide="trending-up" width="20" height="20"></i>
+                        <span>Performance Reports</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('revenueFinance')">
+                        <i data-lucide="dollar-sign" width="20" height="20"></i>
+                        <span>Revenue & Finance</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">SYSTEM</div>
+                    <a href="#" class="nav-item" onclick="showSection('fleetManagement')">
+                        <i data-lucide="truck" width="20" height="20"></i>
+                        <span>Fleet Management</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="logout()">
+                    <i data-lucide="log-out" width="20" height="20"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <h1 id="pageTitle">Admin Dashboard</h1>
+                </div>
+                <div class="top-bar-right">
+                    <button class="icon-btn">
+                        <i data-lucide="bell" width="20" height="20"></i>
+                        <span class="notification-badge" id="notifBadge">3</span>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <div class="user-name" id="adminName">Administrator</div>
+                            <div class="user-role">System Administrator</div>
+                        </div>
+                        <div class="user-avatar" id="userAvatar">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboardSection" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">
+                            <i data-lucide="dollar-sign" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statRevenue">$0</div>
+                            <div class="stat-label">Total Revenue (Feb)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i data-lucide="calendar-check" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statBookings">0</div>
+                            <div class="stat-label">Total Bookings</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i data-lucide="message-square" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statInquiries">0</div>
+                            <div class="stat-label">New Inquiries</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i data-lucide="users" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statUsers">0</div>
+                            <div class="stat-label">Registered Users</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i data-lucide="truck" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statFleetAvailable">0/0</div>
+                            <div class="stat-label">Fleet Available</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i data-lucide="user-check" width="24" height="24"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statPendingApprovals">0</div>
+                            <div class="stat-label">Pending Approvals</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h2>
+                                <i data-lucide="trending-up" width="20" height="20"></i>
+                                Monthly Revenue Trend
+                            </h2>
+                        </div>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h2>
+                                <i data-lucide="pie-chart" width="20" height="20"></i>
+                                Booking Sources
+                            </h2>
+                        </div>
+                        <canvas id="sourcesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section id="userManagementSection" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i data-lucide="users" width="20" height="20"></i>
+                            User Management & Security
+                        </h2>
+                    </div>
+                    
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="showUserTab('pending', event)">Pending Approvals</button>
+                        <button class="tab-btn" onclick="showUserTab('staff', event)">Staff Members</button>
+                        <button class="tab-btn" onclick="showUserTab('clients', event)">Clients</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>USER</th>
+                                    <th>ROLE</th>
+                                    <th>REGISTERED</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Reports Section -->
+            <section id="performanceReportsSection" class="content-section hidden">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h2>
+                                <i data-lucide="trending-up" width="20" height="20"></i>
+                                Inquiry Trends
+                            </h2>
+                        </div>
+                        <canvas id="inquiryTrendsChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header">
+                            <h2>
+                                <i data-lucide="check-circle" width="20" height="20"></i>
+                                Booking Success Rate
+                            </h2>
+                        </div>
+                        <canvas id="successRateChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i data-lucide="bar-chart-2" width="20" height="20"></i>
+                            Monthly Performance Summary
+                        </h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>MONTH</th>
+                                    <th>INQUIRIES</th>
+                                    <th>BOOKINGS</th>
+                                    <th>CONVERSION RATE</th>
+                                    <th>REVENUE</th>
+                                </tr>
+                            </thead>
+                            <tbody id="performanceTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Revenue & Finance Section -->
+            <section id="revenueFinanceSection" class="content-section hidden">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-label">This Month</div>
+                            <div class="stat-value" id="revenueThisMonth">$0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-label">Last Month</div>
+                            <div class="stat-value" id="revenueLastMonth">$0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <div class="stat-label">Growth</div>
+                            <div class="stat-value" id="revenueGrowth" style="color: var(--success);">+0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Revenue Breakdown by Vehicle</h2>
+                    </div>
+                    <canvas id="vehicleRevenueChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Fleet Management Section -->
+            <section id="fleetManagementSection" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>
+                            <i data-lucide="truck" width="20" height="20"></i>
+                            Fleet Management & Pricing
+                        </h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>VEHICLE</th>
+                                    <th>REGISTRATION</th>
+                                    <th>STATUS</th>
+                                    <th>DAILY RATE</th>
+                                    <th>BOOKINGS (MONTH)</th>
+                                    <th>REVENUE</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fleetTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="backend.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

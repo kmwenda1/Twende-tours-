@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twende Tours | Login & Registration</title>
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-wrapper">
+    
+    <div class="auth-card">
+        <!-- Branding -->
+        <div class="auth-brand">
+            <div class="brand-icon">
+                <i data-lucide="compass" width="24" height="24"></i>
+            </div>
+            <h1>Twende Tours</h1>
+            <p>Optimizing Customer Inquiry Management</p>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h3>Welcome Back</h3>
+            <p class="form-subtitle">Enter your details to access your account.</p>
+            
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="name@twende.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPass">Password</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox"> Remember me
+                    </label>
+                    <a href="#" class="forgot-link" onclick="openForgotPassword()">Forgot Password?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-navy btn-lg">
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="divider">
+                <span>OR</span>
+            </div>
+            
+            <div class="form-footer">
+                <p>
+                    Don't have an account? 
+                    <a href="#" onclick="toggleView('register')">Register here</a>
+                </p>
+                <p class="staff-note">
+                    Staff? Contact Admin for credentials.
+                </p>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="registerForm" class="hidden">
+            <h3>Create Traveler Profile</h3>
+            <p class="form-subtitle">Join us for seamless safaris and group adventures.</p>
+            
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" id="regName" class="form-control" placeholder="John Doe" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regEmail">Email Address</label>
+                    <input type="email" id="regEmail" class="form-control" placeholder="john@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPhone">Phone Number (WhatsApp)</label>
+                    <input type="tel" id="regPhone" class="form-control" placeholder="+254 700 000 000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regInterest">Primary Interest</label>
+                    <select id="regInterest" class="form-control" required>
+                        <option value="" disabled selected>Select your interest</option>
+                        <option value="Safari">Safari & Wildlife</option>
+                        <option value="Car Hire">Car Hire</option>
+                        <option value="Group Adventure">Group Adventure</option>
+                        <option value="Corporate Travel">Corporate Travel</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPass">Create Password</label>
+                    <input type="password" id="regPass" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" checked> 
+                        <span>I agree to receive trip updates and offers via WhatsApp/Email</span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Register & Explore
+                </button>
+            </form>
+            
+            <div class="form-footer">
+                <p>
+                    Already have an account? 
+                    <a href="#" onclick="toggleView('login')">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- Step 1: Enter Email -->
+            <div id="resetStep1">
+                <div class="modal-header">
+                    <i data-lucide="key" width="28" height="28"></i>
+                    <h3>Forgot Password?</h3>
+                </div>
+                <p class="modal-subtitle">
+                    No worries! Enter your email address below and we'll help you reset your password.
+                </p>
+                <div class="form-group">
+                    <label for="resetEmail">Email Address</label>
+                    <input type="email" id="resetEmail" class="form-control" placeholder="name@twende.com">
+                </div>
+                <button class="btn btn-navy btn-lg" onclick="verifyEmailForReset()">
+                    Continue
+                </button>
+                <button class="btn btn-outline btn-lg" onclick="closeForgotPassword()">
+                    Cancel
+                </button>
+            </div>
+            
+            <!-- Step 2: Set New Password -->
+            <div id="resetStep2" class="hidden">
+                <div class="success-message">
+                    <i data-lucide="check-circle" width="20" height="20"></i>
+                    <span>Email verified successfully!</span>
+                </div>
+                <p class="modal-subtitle">
+                    Enter your new password below. Make sure it's at least 4 characters long.
+                </p>
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" class="form-control" placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary btn-lg" onclick="completePasswordReset()">
+                    Reset Password
+                </button>
+                <button class="btn btn-outline btn-lg" onclick="closeForgotPassword()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backend Logic -->
+    <script src="backend.js"></script>
+    
+    <!-- Page Logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Toggle between Login and Register views
+        function toggleView(view) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (view === 'register') {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+            } else {
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        // Forgot Password Functions
+        function openForgotPassword() {
+            const modal = document.getElementById('forgotPasswordModal');
+            modal.classList.add('active');
+            document.getElementById('resetStep1').classList.remove('hidden');
+            document.getElementById('resetStep2').classList.add('hidden');
+            document.getElementById('resetEmail').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeForgotPassword() {
+            const modal = document.getElementById('forgotPasswordModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeForgotPassword();
+            }
+        });
+
+        function verifyEmailForReset() {
+            const email = document.getElementById('resetEmail').value.trim();
+            
+            if (!email) {
+                alert('Please enter your email address.');
+                return;
+            }
+            
+            const db = getDB();
+            const user = db.users.find(u => u.email === email);
+            
+            if (user) {
+                document.getElementById('resetStep1').classList.add('hidden');
+                document.getElementById('resetStep2').classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                alert('Email address not found in our system. Please check or register for an account.');
+            }
+        }
+
+        function completePasswordReset() {
+            const email = document.getElementById('resetEmail').value.trim();
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmPassword').value;
+            
+            if (!newPass || newPass.length < 4) {
+                alert('Password must be at least 4 characters long.');
+                return;
+            }
+            
+            if (newPass !== confirmPass) {
+                alert('Passwords do not match. Please try again.');
+                return;
+            }
+            
+            const db = getDB();
+            const user = db.users.find(u => u.email === email);
+            
+            if (user) {
+                user.pass = newPass;
+                saveDB(db);
+                
+                alert('✓ Password reset successful!\n\nYou can now login with your new password.');
+                closeForgotPassword();
+                
+                document.getElementById('loginEmail').value = email;
+                document.getElementById('loginPass').value = '';
+            } else {
+                alert('Error: User not found.');
+            }
+        }
+
+        // Handle Login Submission
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const btn = e.target.querySelector('button');
+            
+            const originalText = btn.innerText;
+            btn.innerText = 'Signing In...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const res = login(email, pass);
+                if (res.success) {
+                    window.location.href = `${res.role}.html`;
+                } else {
+                    alert(res.message);
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }, 500);
+        }
+
+        // Handle Registration Submission
+        function handleRegister(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                interest: document.getElementById('regInterest').value,
+                pass: document.getElementById('regPass').value
+            };
+            
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Creating Account...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const res = register(data);
+                if (res.success) {
+                    alert('✓ Registration Successful!\n\nYour account has been created. Please login.');
+                    toggleView('login');
+                    e.target.reset();
+                } else {
+                    alert('Registration Failed. Email might already exist.');
+                }
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }, 500);
+        }
+
+        // Allow Enter key to submit forms in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('resetEmail').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') verifyEmailForReset();
+            });
+            
+            document.getElementById('newPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') completePasswordReset();
+            });
+            
+            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') completePasswordReset();
+            });
+        });
+    </script>
+</body>
+</html>
