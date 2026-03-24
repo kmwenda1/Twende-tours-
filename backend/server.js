@@ -7,13 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',  // Your MySQL password (empty for XAMPP)
-    database: 'twende_tours'
-});
+// ============ DATABASE CONNECTION (Railway + Localhost) ============
+// Uses DATABASE_URL env var on Railway, falls back to localhost for local testing
+const db = mysql.createConnection(
+    process.env.DATABASE_URL || {
+        host: 'localhost',
+        user: 'root',
+        password: '',
+        database: 'twende_tours'
+    }
+);
 
 db.connect(err => {
     if (err) {
@@ -192,10 +195,11 @@ app.post('/api/inquiries', (req, res) => {
 // ============ M-PESA ROUTES ============
 
 // M-Pesa Credentials (from Daraja)
-const MPESA_CONSUMER_KEY = 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
-const MPESA_CONSUMER_SECRET = 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
-const MPESA_SHORTCODE = '174379';  // Sandbox test shortcode
-const MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
+const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
+const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE || '174379';
+const MPESA_PASSKEY = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL || 'https://your-domain.com/api/mpesa/callback';
 
 // Generate M-Pesa Access Token
 async function getMpesaToken() {
@@ -240,7 +244,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
                 PartyA: phone,
                 PartyB: MPESA_SHORTCODE,
                 PhoneNumber: phone,
-                CallBackURL: 'https://your-domain.com/api/mpesa/callback',
+                CallBackURL: MPESA_CALLBACK_URL,
                 AccountReference: 'TwendeTours',
                 TransactionDesc: `Booking ${booking_id}`
             },
@@ -304,7 +308,7 @@ app.post('/api/mpesa/check-status', async (req, res) => {
     }
 });
 
-// Start Server
+// ============ START SERVER ============
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
