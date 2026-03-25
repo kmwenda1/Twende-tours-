@@ -479,7 +479,7 @@
                             value="254708374149"
                         />
                         <button 
-                            onclick="initiateMpesaPayment()" 
+                            onclick="handleMpesaPaymentSubmit()" 
                             class="btn-primary"
                             style="background: #10b981; padding: 12px 20px; white-space: nowrap;"
                         >
@@ -914,8 +914,9 @@
         }
 
         // ============ M-PESA PAYMENT ============
-
-        async function initiateMpesaPayment() {
+        // ✅ FIXED: Renamed to avoid conflict with backend.js function
+        
+        async function handleMpesaPaymentSubmit() {
             const phone = document.getElementById('mpesaPhone').value.trim();
             const statusDiv = document.getElementById('paymentStatus');
             
@@ -941,6 +942,7 @@
             try {
                 const amount = currentBooking.rate || 18000;
                 
+                // ✅ Now correctly calls backend.js initiateMpesaPayment function
                 const result = await initiateMpesaPayment(phone, amount, currentBooking.bookingId);
                 
                 console.log('💰 M-Pesa result:', result);
