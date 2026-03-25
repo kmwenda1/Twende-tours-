@@ -39,6 +39,39 @@
         .payment-loading {
             color: #065f46; display: flex; align-items: center;
         }
+        .vehicle-card {
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .vehicle-card:hover { transform: translateY(-4px); }
+        .vehicle-image {
+            width: 100%; height: 200px; object-fit: cover;
+        }
+        .vehicle-info { padding: 16px; }
+        .vehicle-type {
+            color: var(--text-light); font-size: 0.875rem; margin-bottom: 8px;
+        }
+        .vehicle-description {
+            color: var(--text-medium); font-size: 0.9rem; margin-bottom: 12px;
+        }
+        .vehicle-specs {
+            display: flex; gap: 16px; margin-bottom: 12px; color: var(--text-medium);
+        }
+        .vehicle-rate {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .rate-amount { font-weight: 700; color: var(--primary-gold); font-size: 1.25rem; }
+        .rate-period { color: var(--text-light); font-size: 0.875rem; }
+        .btn:disabled {
+            opacity: 0.6; cursor: not-allowed;
+        }
+        .fleet-empty {
+            text-align: center; padding: 40px; color: var(--text-light);
+        }
+        .fleet-loading {
+            text-align: center; padding: 40px;
+        }
     </style>
 </head>
 <body>
@@ -240,7 +273,7 @@
 
             <!-- Fleet Grid -->
             <div class="fleet-grid" id="fleetGrid">
-                <!-- Fleet cards loaded here -->
+                <!-- Fleet cards loaded here by JavaScript -->
             </div>
         </section>
 
@@ -462,6 +495,524 @@
 
     <!-- Scripts -->
     <script src="backend.js"></script>
-    <script src="client.js"></script>
+    
+    <!-- Client Page Logic -->
+    <script>
+        // Initialize Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Global variables
+        let allFleet = [];
+        let currentUser = null;
+        let currentBooking = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Client page loaded');
+            
+            // Get current user
+            currentUser = getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Update UI with user info
+            updateUserInfo();
+            
+            // Load dashboard stats
+            loadDashboardStats();
+            
+            // Load fleet for the fleet section (pre-load for faster display)
+            await loadFleet();
+        });
+
+        // Update user info in UI
+        function updateUserInfo() {
+            if (!currentUser) return;
+            
+            // Dashboard
+            document.getElementById('dashUserName').textContent = currentUser.name || 'Client';
+            
+            // Profile
+            document.getElementById('profileName').textContent = currentUser.name || 'Client User';
+            document.getElementById('profileEmail').textContent = currentUser.email || '';
+            document.getElementById('profileFullName').value = currentUser.name || '';
+            document.getElementById('profileEmailAddress').value = currentUser.email || '';
+            document.getElementById('profilePhone').value = currentUser.phone || '';
+            
+            // Set member since (fallback)
+            document.getElementById('profileMemberSince').value = '2024';
+        }
+
+        // Show/Hide sections
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.portal-section').forEach(sec => {
+                sec.classList.add('hidden-section');
+            });
+            
+            // Show requested section
+            const section = document.getElementById(sectionId + 'Section');
+            if (section) {
+                section.classList.remove('hidden-section');
+            }
+            
+            // Update nav active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event?.target?.closest('.nav-link')?.classList.add('active');
+            
+            // Load section-specific data
+            if (sectionId === 'fleet') {
+                renderFleet(allFleet);
+            } else if (sectionId === 'dashboard') {
+                loadDashboardStats();
+            } else if (sectionId === 'myTrips') {
+                loadMyTrips();
+            } else if (sectionId === 'profile') {
+                loadProfileStats();
+            }
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // Load Dashboard Stats
+        async function loadDashboardStats() {
+            try {
+                const stats = await getDashboardStats();
+                console.log('📊 Dashboard stats:', stats);
+                
+                document.getElementById('statTotalTrips').textContent = stats.totalBookings || 0;
+                document.getElementById('statUpcoming').textContent = stats.confirmedBookings || 0;
+                document.getElementById('statCompleted').textContent = '0';
+                document.getElementById('statTotalSpent').textContent = 
+                    `$${(stats.totalRevenue || 0).toLocaleString()}`;
+                    
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load My Trips
+        async function loadMyTrips() {
+            try {
+                const bookings = await getBookings();
+                console.log('📋 Bookings:', bookings);
+                
+                // Filter for current user's bookings
+                const userBookings = bookings.filter(b => b.user_id === currentUser?.id);
+                
+                // Update stats
+                document.getElementById('tripsStatTotal').textContent = userBookings.length;
+                document.getElementById('tripsStatUpcoming').textContent = 
+                    userBookings.filter(b => b.status === 'Confirmed' || b.status === 'Pending').length;
+                document.getElementById('tripsStatCompleted').textContent = 
+                    userBookings.filter(b => b.status === 'Completed').length;
+                document.getElementById('tripsStatSpent').textContent = 
+                    `$${userBookings.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}`;
+                
+                // Load trip history table
+                renderTripHistory(userBookings);
+                
+            } catch (error) {
+                console.error('Error loading trips:', error);
+            }
+        }
+
+        // Render Trip History Table
+        function renderTripHistory(bookings) {
+            const tbody = document.getElementById('tripHistoryBody');
+            if (!tbody) return;
+            
+            if (bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No trips yet. Book your first safari!</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = bookings.map(booking => `
+                <tr>
+                    <td>${booking.destination || 'N/A'}</td>
+                    <td>Vehicle #${booking.vehicle_id}</td>
+                    <td>${booking.start_date || 'N/A'} - ${booking.end_date || 'N/A'}</td>
+                    <td>${booking.travelers || 1}</td>
+                    <td>KES ${booking.amount?.toLocaleString() || '0'}</td>
+                    <td><span class="badge badge-${getStatusColor(booking.status)}">${booking.status}</span></td>
+                    <td>
+                        <button class="btn-sm" onclick="viewBookingDetails(${booking.id})">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Get badge color for status
+        function getStatusColor(status) {
+            const colors = {
+                'Pending': 'yellow',
+                'Confirmed': 'blue',
+                'Completed': 'green',
+                'Cancelled': 'red'
+            };
+            return colors[status] || 'gray';
+        }
+
+        // View Booking Details
+        function viewBookingDetails(bookingId) {
+            alert(`Booking #${bookingId}\n\nDetails coming soon!`);
+        }
+
+        // Load Profile Stats
+        async function loadProfileStats() {
+            try {
+                const stats = await getDashboardStats();
+                document.getElementById('profileStatTrips').textContent = stats.totalBookings || 0;
+                document.getElementById('profileStatUpcoming').textContent = stats.confirmedBookings || 0;
+                document.getElementById('profileStatCompleted').textContent = '0';
+                document.getElementById('profileStatSpent').textContent = 
+                    `$${(stats.totalRevenue || 0).toLocaleString()}`;
+            } catch (error) {
+                console.error('Error loading profile stats:', error);
+            }
+        }
+
+        // ============ FLEET FUNCTIONS ============
+
+        // Load Fleet from API
+        async function loadFleet() {
+            console.log('🚗 Loading fleet...');
+            const fleetGrid = document.getElementById('fleetGrid');
+            
+            if (!fleetGrid) {
+                console.error('Fleet grid container not found');
+                return;
+            }
+            
+            // Show loading state
+            fleetGrid.innerHTML = `
+                <div class="fleet-loading">
+                    <div class="spinner"></div>
+                    <p>Loading vehicles...</p>
+                </div>
+            `;
+            
+            try {
+                const vehicles = await getFleet();
+                console.log('📦 Fleet loaded:', vehicles);
+                
+                allFleet = vehicles || [];
+                
+                if (allFleet.length === 0) {
+                    fleetGrid.innerHTML = `
+                        <div class="fleet-empty">
+                            <i data-lucide="truck" width="48" height="48" style="opacity:0.3"></i>
+                            <p style="margin-top:16px">No vehicles available at the moment.<br>Please check back later!</p>
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+                
+                // Render fleet
+                renderFleet(allFleet);
+                
+            } catch (error) {
+                console.error('❌ Error loading fleet:', error);
+                fleetGrid.innerHTML = `
+                    <div class="fleet-empty">
+                        <p style="color:var(--error)">Failed to load vehicles.<br>Please check your connection and try again.</p>
+                        <button class="btn-outline" onclick="loadFleet()" style="margin-top:12px">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Fleet Grid
+        function renderFleet(vehicles) {
+            const fleetGrid = document.getElementById('fleetGrid');
+            if (!fleetGrid) return;
+            
+            fleetGrid.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-card">
+                    <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                         alt="${vehicle.name}" 
+                         class="vehicle-image"
+                         onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                    <div class="vehicle-info">
+                        <h3>${vehicle.name}</h3>
+                        <p class="vehicle-type">${vehicle.type}</p>
+                        <p class="vehicle-description">${vehicle.description || 'Premium safari vehicle with excellent game viewing capabilities.'}</p>
+                        <div class="vehicle-specs">
+                            <span><i data-lucide="users" width="16"></i> ${vehicle.seats || 6} seats</span>
+                            <span><i data-lucide="briefcase" width="16"></i> ${vehicle.bags || 4} bags</span>
+                        </div>
+                        <div class="vehicle-rate">
+                            <span class="rate-amount">KES ${vehicle.rate?.toLocaleString() || '0'}</span>
+                            <span class="rate-period">per day</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" 
+                                ${vehicle.status !== 'Available' ? 'disabled' : ''}>
+                            ${vehicle.status === 'Available' ? 'Book Now' : vehicle.status}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // Filter Fleet
+        function filterFleet(filter) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event?.target?.classList.add('active');
+            
+            let filtered = allFleet;
+            
+            if (filter === 'Available') {
+                filtered = allFleet.filter(v => v.status === 'Available');
+            } else if (filter === '4x4') {
+                filtered = allFleet.filter(v => v.type === '4x4');
+            } else if (filter === 'Van') {
+                filtered = allFleet.filter(v => v.type === 'Van' || v.type === 'Bus');
+            }
+            // 'all' shows everything
+            
+            renderFleet(filtered);
+        }
+
+        // Book Vehicle
+        function bookVehicle(vehicleId) {
+            console.log('🎯 Booking vehicle:', vehicleId);
+            
+            const vehicle = allFleet.find(v => v.id === vehicleId);
+            if (!vehicle) {
+                alert('Vehicle not found');
+                return;
+            }
+            
+            // Store selected vehicle
+            currentBooking = {
+                vehicle_id: vehicleId,
+                vehicle_name: vehicle.name,
+                rate: vehicle.rate
+            };
+            
+            // Open request modal pre-filled
+            openRequestModal();
+            document.getElementById('reqDestination').value = 'Masai Mara'; // Default
+        }
+
+        // ============ MODAL FUNCTIONS ============
+
+        function openRequestModal() {
+            const modal = document.getElementById('requestModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Pre-fill if vehicle was selected
+            if (currentBooking) {
+                document.getElementById('reqDestination').value = 'Masai Mara';
+            }
+        }
+
+        function closeRequestModal() {
+            const modal = document.getElementById('requestModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            document.getElementById('bookingForm').reset();
+            document.getElementById('paymentSection').style.display = 'none';
+            currentBooking = null;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('requestModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRequestModal();
+            }
+        });
+
+        // Submit Safari Request
+        async function submitSafariRequest(e) {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+            
+            const btn = document.getElementById('submitBookingBtn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Creating Booking...';
+            btn.disabled = true;
+            
+            try {
+                const bookingData = {
+                    user_id: currentUser.id,
+                    vehicle_id: currentBooking?.vehicle_id || 101, // Default fallback
+                    destination: document.getElementById('reqDestination').value,
+                    start_date: document.getElementById('reqDate').value,
+                    end_date: document.getElementById('reqDate').value, // Same day for now
+                    travelers: document.getElementById('reqTravelers').value,
+                    notes: document.getElementById('reqNotes').value,
+                    amount: currentBooking?.rate || 18000
+                };
+                
+                console.log('📝 Creating booking:', bookingData);
+                
+                const result = await createBooking(bookingData);
+                
+                if (result.success) {
+                    console.log('✅ Booking created:', result);
+                    
+                    // Show payment section
+                    document.getElementById('bookingForm').style.display = 'none';
+                    document.getElementById('paymentSection').style.display = 'block';
+                    
+                    // Store booking ID for payment
+                    currentBooking.bookingId = result.bookingId;
+                    
+                } else {
+                    alert(result.message || 'Failed to create booking. Please try again.');
+                }
+                
+            } catch (error) {
+                console.error('❌ Booking error:', error);
+                alert('Connection error. Please check your internet and try again.');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ============ M-PESA PAYMENT ============
+
+        async function initiateMpesaPayment() {
+            const phone = document.getElementById('mpesaPhone').value.trim();
+            const statusDiv = document.getElementById('paymentStatus');
+            
+            if (!phone || !phone.startsWith('254')) {
+                alert('Please enter a valid M-Pesa number (e.g., 254708374149)');
+                return;
+            }
+            
+            if (!currentBooking?.bookingId) {
+                alert('No booking found. Please create a booking first.');
+                return;
+            }
+            
+            // Show loading
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `
+                <div class="payment-loading">
+                    <div class="spinner"></div>
+                    <span>Sending payment request to ${phone}...</span>
+                </div>
+            `;
+            
+            try {
+                const amount = currentBooking.rate || 18000;
+                
+                const result = await initiateMpesaPayment(phone, amount, currentBooking.bookingId);
+                
+                console.log('💰 M-Pesa result:', result);
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div class="payment-success">
+                            <strong>✓ Payment Request Sent!</strong><br>
+                            Check your phone for the M-Pesa prompt.<br>
+                            Enter PIN <strong>4321</strong> to confirm (sandbox test).
+                        </div>
+                    `;
+                    
+                    // Optional: Start polling for payment status
+                    // pollPaymentStatus(result.checkoutRequestID);
+                    
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="payment-error">
+                            <strong>✗ Payment Failed</strong><br>
+                            ${result.error || result.message || 'Please try again.'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ M-Pesa error:', error);
+                statusDiv.innerHTML = `
+                    <div class="payment-error">
+                        <strong>✗ Connection Error</strong><br>
+                        Please check your internet and try again.
+                    </div>
+                `;
+            }
+        }
+
+        // Poll payment status (optional enhancement)
+        async function pollPaymentStatus(checkoutRequestID, maxAttempts = 10) {
+            let attempts = 0;
+            
+            const interval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    const result = await checkMpesaStatus(checkoutRequestID);
+                    
+                    if (result.status?.ResultCode === '0') {
+                        // Payment successful
+                        clearInterval(interval);
+                        
+                        // Update booking status to Confirmed
+                        if (currentBooking?.bookingId) {
+                            await updateBookingStatus(currentBooking.bookingId, 'Confirmed');
+                        }
+                        
+                        alert('✓ Payment confirmed! Your booking is now confirmed.');
+                        closeRequestModal();
+                        loadMyTrips(); // Refresh trips
+                        return;
+                    }
+                    
+                    if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        alert('Payment verification timed out. Please check your M-Pesa messages.');
+                    }
+                    
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        // ============ PROFILE FUNCTIONS ============
+
+        function saveProfile() {
+            alert('Profile updates coming soon! This feature will sync with the backend.');
+        }
+
+        function changePassword() {
+            alert('Password change coming soon!');
+        }
+
+        // ============ LOGOUT ============
+
+        function logout() {
+            if (typeof window.logout === 'function') {
+                window.logout();
+            } else {
+                sessionStorage.removeItem('twende_user');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
 </body>
 </html>
