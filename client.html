@@ -82,23 +82,23 @@
             Twende Tours
         </div>
         <nav class="portal-nav">
-            <a href="#" onclick="showSection('dashboard')" class="nav-link active">
+            <a href="javascript:void(0)" onclick="showSection('dashboard')" class="nav-link active">
                 <i data-lucide="layout-dashboard" width="18" height="18"></i>
                 Dashboard
             </a>
-            <a href="#" onclick="showSection('myTrips')" class="nav-link">
+            <a href="javascript:void(0)" onclick="showSection('myTrips')" class="nav-link">
                 <i data-lucide="calendar" width="18" height="18"></i>
                 My Trips
             </a>
-            <a href="#" onclick="showSection('fleet')" class="nav-link">
+            <a href="javascript:void(0)" onclick="showSection('fleet')" class="nav-link">
                 <i data-lucide="truck" width="18" height="18"></i>
                 Browse Fleet
             </a>
-            <a href="#" onclick="showSection('profile')" class="nav-link">
+            <a href="javascript:void(0)" onclick="showSection('profile')" class="nav-link">
                 <i data-lucide="user" width="18" height="18"></i>
                 Profile
             </a>
-            <a href="#" class="logout-btn" onclick="logout()">
+            <a href="javascript:void(0)" class="logout-btn" onclick="handleLogout()">
                 <i data-lucide="log-out" width="18" height="18"></i>
                 Logout
             </a>
@@ -583,7 +583,14 @@
             }
         }
 
-        // Load Dashboard Stats
+        // ✅ FIXED: Logout function - prevent infinite loop
+        function handleLogout() {
+            console.log('🚪 Logging out...');
+            sessionStorage.removeItem('twende_user');
+            window.location.href = 'index.html';
+        }
+
+        // Load Dashboard Stats - FIXED Total Spent calculation
         async function loadDashboardStats() {
             try {
                 const stats = await getDashboardStats();
@@ -592,15 +599,18 @@
                 document.getElementById('statTotalTrips').textContent = stats.totalBookings || 0;
                 document.getElementById('statUpcoming').textContent = stats.confirmedBookings || 0;
                 document.getElementById('statCompleted').textContent = '0';
+                
+                // ✅ FIXED: Ensure numeric calculation
+                const revenue = parseFloat(stats.totalRevenue) || 0;
                 document.getElementById('statTotalSpent').textContent = 
-                    `$${(stats.totalRevenue || 0).toLocaleString()}`;
+                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                     
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('❌ Error loading stats:', error);
             }
         }
 
-        // Load My Trips
+        // Load My Trips - FIXED Total Spent calculation
         async function loadMyTrips() {
             try {
                 const bookings = await getBookings();
@@ -615,14 +625,21 @@
                     userBookings.filter(b => b.status === 'Confirmed' || b.status === 'Pending').length;
                 document.getElementById('tripsStatCompleted').textContent = 
                     userBookings.filter(b => b.status === 'Completed').length;
+                
+                // ✅ FIXED: Properly calculate total spent with parseFloat
+                const totalSpent = userBookings.reduce((sum, booking) => {
+                    const amount = parseFloat(booking.amount) || 0;
+                    return sum + amount;
+                }, 0);
+                
                 document.getElementById('tripsStatSpent').textContent = 
-                    `$${userBookings.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}`;
+                    `$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 
                 // Load trip history table
                 renderTripHistory(userBookings);
                 
             } catch (error) {
-                console.error('Error loading trips:', error);
+                console.error('❌ Error loading trips:', error);
             }
         }
 
@@ -642,7 +659,7 @@
                     <td>Vehicle #${booking.vehicle_id}</td>
                     <td>${booking.start_date || 'N/A'} - ${booking.end_date || 'N/A'}</td>
                     <td>${booking.travelers || 1}</td>
-                    <td>KES ${booking.amount?.toLocaleString() || '0'}</td>
+                    <td>KES ${(parseFloat(booking.amount) || 0).toLocaleString()}</td>
                     <td><span class="badge badge-${getStatusColor(booking.status)}">${booking.status}</span></td>
                     <td>
                         <button class="btn-sm" onclick="viewBookingDetails(${booking.id})">View</button>
@@ -667,17 +684,20 @@
             alert(`Booking #${bookingId}\n\nDetails coming soon!`);
         }
 
-        // Load Profile Stats
+        // Load Profile Stats - FIXED Total Spent calculation
         async function loadProfileStats() {
             try {
                 const stats = await getDashboardStats();
                 document.getElementById('profileStatTrips').textContent = stats.totalBookings || 0;
                 document.getElementById('profileStatUpcoming').textContent = stats.confirmedBookings || 0;
                 document.getElementById('profileStatCompleted').textContent = '0';
+                
+                // ✅ FIXED: Ensure numeric calculation
+                const revenue = parseFloat(stats.totalRevenue) || 0;
                 document.getElementById('profileStatSpent').textContent = 
-                    `$${(stats.totalRevenue || 0).toLocaleString()}`;
+                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             } catch (error) {
-                console.error('Error loading profile stats:', error);
+                console.error('❌ Error loading profile stats:', error);
             }
         }
 
@@ -934,9 +954,6 @@
                         </div>
                     `;
                     
-                    // Optional: Start polling for payment status
-                    // pollPaymentStatus(result.checkoutRequestID);
-                    
                 } else {
                     statusDiv.innerHTML = `
                         <div class="payment-error">
@@ -957,42 +974,6 @@
             }
         }
 
-        // Poll payment status (optional enhancement)
-        async function pollPaymentStatus(checkoutRequestID, maxAttempts = 10) {
-            let attempts = 0;
-            
-            const interval = setInterval(async () => {
-                attempts++;
-                
-                try {
-                    const result = await checkMpesaStatus(checkoutRequestID);
-                    
-                    if (result.status?.ResultCode === '0') {
-                        // Payment successful
-                        clearInterval(interval);
-                        
-                        // Update booking status to Confirmed
-                        if (currentBooking?.bookingId) {
-                            await updateBookingStatus(currentBooking.bookingId, 'Confirmed');
-                        }
-                        
-                        alert('✓ Payment confirmed! Your booking is now confirmed.');
-                        closeRequestModal();
-                        loadMyTrips(); // Refresh trips
-                        return;
-                    }
-                    
-                    if (attempts >= maxAttempts) {
-                        clearInterval(interval);
-                        alert('Payment verification timed out. Please check your M-Pesa messages.');
-                    }
-                    
-                } catch (error) {
-                    console.error('Polling error:', error);
-                }
-            }, 5000); // Check every 5 seconds
-        }
-
         // ============ PROFILE FUNCTIONS ============
 
         function saveProfile() {
@@ -1001,17 +982,6 @@
 
         function changePassword() {
             alert('Password change coming soon!');
-        }
-
-        // ============ LOGOUT ============
-
-        function logout() {
-            if (typeof window.logout === 'function') {
-                window.logout();
-            } else {
-                sessionStorage.removeItem('twende_user');
-                window.location.href = 'index.html';
-            }
         }
     </script>
 </body>
