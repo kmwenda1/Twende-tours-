@@ -4,48 +4,71 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const app = express();
 
-// ============ CORS CONFIGURATION (Allow Vercel Frontend) ============
-const corsOptions = {
+// ============ CORS CONFIGURATION ============
+app.use(cors({
     origin: [
         'https://twende-tours.vercel.app',
-        'https://twende-tours-*.vercel.app',  // Wildcard for preview deployments
+        'https://twende-tours-*.vercel.app',
         'http://localhost:3000',
         'http://localhost:5500',
-        'http://127.0.0.1:5500'
+        '*'  // Fallback for any origin
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-};
-
-app.use(cors(corsOptions));
+}));
 app.use(express.json());
 
-// ============ DATABASE CONNECTION POOL (Production Ready) ============
-const db = mysql.createPool({
-    connectionLimit: 10,
-    uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'twende_tours',
-    port: process.env.DB_PORT || 3306,
-    waitForConnections: true,
-    queueLimit: 0
-});
+// ============ DATABASE CONNECTION (Simple & Reliable) ============
+// Using simple connection instead of pool for Railway compatibility
+let db;
 
-// Test database connection
-db.getConnection((err, connection) => {
-    if (err) {
-        console.error('❌ Database connection failed:', err.message);
-    } else {
-        console.log('✅ Connected to MySQL database pool!');
-        connection.release();
-    }
-});
+function connectDatabase() {
+    const dbConfig = process.env.DATABASE_URL || process.env.MYSQL_URL 
+        ? { uri: process.env.DATABASE_URL || process.env.MYSQL_URL }
+        : {
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || '',
+            database: process.env.DB_NAME || 'twende_tours',
+            port: process.env.DB_PORT || 3306
+        };
+    
+    db = mysql.createConnection(dbConfig);
+    
+    db.connect((err) => {
+        if (err) {
+            console.error('❌ Database connection failed:', err.message);
+            // Retry connection after 5 seconds
+            setTimeout(connectDatabase, 5000);
+        } else {
+            console.log('✅ Connected to MySQL database!');
+        }
+    });
+    
+    // Handle connection errors and auto-reconnect
+    db.on('error', (err) => {
+        console.error('❌ MySQL error:', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            console.log('🔄 Reconnecting to database...');
+            connectDatabase();
+        }
+    });
+}
 
-// ============ HEALTH CHECK ENDPOINTS (Required for Railway) ============
+// Initialize database connection
+connectDatabase();
+
+// ============ HEALTH CHECK ENDPOINTS ============
 app.get('/health', (req, res) => {
+    if (!db || !db.state === 'connected') {
+        return res.status(503).json({ 
+            status: 'error', 
+            timestamp: new Date().toISOString(),
+            database: 'disconnected'
+        });
+    }
+    
     db.query('SELECT 1', (err) => {
         if (err) {
             return res.status(503).json({ 
@@ -70,19 +93,22 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         status: 'running',
         endpoints: [
-            '/api/fleet',
-            '/api/login', 
-            '/api/register',
-            '/api/bookings',
-            '/api/users',
-            '/api/inquiries',
-            '/api/mpesa/stkpush',
-            '/health'
+            '/api/fleet', '/api/login', '/api/register',
+            '/api/bookings', '/api/users', '/api/inquiries',
+            '/api/mpesa/stkpush', '/health'
         ]
     });
 });
 
 // ============ API ROUTES ============
+
+// Helper function to ensure DB is connected before queries
+function queryDb(sql, params, callback) {
+    if (!db || db.state !== 'connected') {
+        return callback(new Error('Database not connected'), null);
+    }
+    db.query(sql, params, callback);
+}
 
 // Login
 app.post('/api/login', (req, res) => {
@@ -94,7 +120,7 @@ app.post('/api/login', (req, res) => {
     
     console.log('🔐 Login attempt:', email);
     
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
+    queryDb('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
         if (err) {
             console.error('❌ Login DB error:', err);
             return res.status(500).json({ error: err.message });
@@ -115,7 +141,6 @@ app.post('/api/login', (req, res) => {
                 return res.json({ success: false, message: 'Account pending approval' });
             }
             
-            // Remove password from response
             const { password: _, ...userWithoutPassword } = user;
             
             console.log('✅ Login successful:', user.email);
@@ -147,7 +172,7 @@ app.post('/api/register', (req, res) => {
             return res.status(500).json({ error: err.message });
         }
         
-        db.query(
+        queryDb(
             'INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [name, email, hashedPassword, 'client', phone || '', interest || '', true],
             (err, result) => {
@@ -168,7 +193,7 @@ app.post('/api/register', (req, res) => {
 // Get Fleet
 app.get('/api/fleet', (req, res) => {
     console.log('🚗 Fleet request received');
-    db.query('SELECT * FROM fleet ORDER BY name', (err, results) => {
+    queryDb('SELECT * FROM fleet ORDER BY name', (err, results) => {
         if (err) {
             console.error('❌ Fleet DB error:', err);
             return res.status(500).json({ error: err.message });
@@ -186,7 +211,7 @@ app.put('/api/fleet/:id/status', (req, res) => {
         return res.status(400).json({ error: 'Status is required' });
     }
     
-    db.query('UPDATE fleet SET status = ? WHERE id = ?', [status, id], (err, result) => {
+    queryDb('UPDATE fleet SET status = ? WHERE id = ?', [status, id], (err, result) => {
         if (err) {
             console.error('❌ Update fleet error:', err);
             return res.status(500).json({ error: err.message });
@@ -201,7 +226,7 @@ app.put('/api/fleet/:id/status', (req, res) => {
 // Get Bookings
 app.get('/api/bookings', (req, res) => {
     console.log('📋 Bookings request received');
-    db.query(
+    queryDb(
         `SELECT b.*, f.name as vehicle_name, f.type as vehicle_type, u.name as client_name, u.email as client_email 
          FROM bookings b 
          LEFT JOIN fleet f ON b.vehicle_id = f.id 
@@ -225,7 +250,7 @@ app.post('/api/bookings/check-availability', (req, res) => {
         return res.status(400).json({ success: false, error: 'vehicle_id, start_date, and end_date are required' });
     }
     
-    db.query(
+    queryDb(
         `SELECT * FROM bookings WHERE vehicle_id = ? AND status IN ('Pending', 'Confirmed') 
          AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))`,
         [vehicle_id, start_date, end_date, start_date, end_date],
@@ -245,7 +270,6 @@ app.post('/api/bookings', (req, res) => {
     
     console.log('📥 Creating booking:', { user_id, vehicle_id, destination, amount });
     
-    // Validate required fields
     if (!user_id || !vehicle_id || !destination || !start_date || !end_date) {
         return res.status(400).json({ 
             error: 'Missing required fields',
@@ -253,7 +277,7 @@ app.post('/api/bookings', (req, res) => {
         });
     }
     
-    db.query(
+    queryDb(
         'INSERT INTO bookings (user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Pending")',
         [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0],
         (err, result) => {
@@ -289,7 +313,7 @@ app.put('/api/bookings/:id/status', (req, res) => {
     
     console.log('🔄 Updating booking status:', id, status);
     
-    db.query(
+    queryDb(
         'UPDATE bookings SET status = ? WHERE id = ?',
         [status, id],
         (err, result) => {
@@ -301,9 +325,8 @@ app.put('/api/bookings/:id/status', (req, res) => {
                 return res.status(404).json({ error: 'Booking not found' });
             }
             
-            // If status is Confirmed, also update fleet status to Booked
             if (status === 'Confirmed') {
-                db.query(
+                queryDb(
                     'UPDATE fleet SET status = "Booked" WHERE id = (SELECT vehicle_id FROM bookings WHERE id = ?)',
                     [id],
                     (fleetErr) => {
@@ -319,7 +342,7 @@ app.put('/api/bookings/:id/status', (req, res) => {
 
 // Get Users
 app.get('/api/users', (req, res) => {
-    db.query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC', (err, results) => {
+    queryDb('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC', (err, results) => {
         if (err) {
             console.error('❌ Users DB error:', err);
             return res.status(500).json({ error: err.message });
@@ -330,7 +353,7 @@ app.get('/api/users', (req, res) => {
 
 // Approve User
 app.put('/api/users/:id/approve', (req, res) => {
-    db.query('UPDATE users SET is_approved = TRUE WHERE id = ?', [req.params.id], (err, result) => {
+    queryDb('UPDATE users SET is_approved = TRUE WHERE id = ?', [req.params.id], (err, result) => {
         if (err) {
             console.error('❌ Approve user error:', err);
             return res.status(500).json({ error: err.message });
@@ -344,7 +367,7 @@ app.put('/api/users/:id/approve', (req, res) => {
 
 // Delete User
 app.delete('/api/users/:id', (req, res) => {
-    db.query('DELETE FROM users WHERE id = ?', [req.params.id], (err, result) => {
+    queryDb('DELETE FROM users WHERE id = ?', [req.params.id], (err, result) => {
         if (err) {
             console.error('❌ Delete user error:', err);
             return res.status(500).json({ error: err.message });
@@ -358,7 +381,7 @@ app.delete('/api/users/:id', (req, res) => {
 
 // Get Inquiries
 app.get('/api/inquiries', (req, res) => {
-    db.query('SELECT * FROM inquiries ORDER BY created_at DESC', (err, results) => {
+    queryDb('SELECT * FROM inquiries ORDER BY created_at DESC', (err, results) => {
         if (err) {
             console.error('❌ Inquiries DB error:', err);
             return res.status(500).json({ error: err.message });
@@ -375,7 +398,7 @@ app.post('/api/inquiries', (req, res) => {
         return res.status(400).json({ error: 'Client name and email are required' });
     }
     
-    db.query(
+    queryDb(
         'INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)',
         [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website'],
         (err, result) => {
@@ -397,7 +420,7 @@ app.put('/api/inquiries/:id', (req, res) => {
         return res.status(400).json({ error: 'Status is required' });
     }
     
-    db.query(
+    queryDb(
         'UPDATE inquiries SET status = ?, assigned_to = ?, replied_at = NOW() WHERE id = ?',
         [status, assigned_to || null, id],
         (err, result) => {
@@ -421,7 +444,6 @@ const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE || '174379';
 const MPESA_PASSKEY = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
 const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL || 'https://twende-tours-production.up.railway.app/api/mpesa/callback';
 
-// Generate M-Pesa Access Token
 async function getMpesaToken() {
     const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
     
@@ -441,7 +463,7 @@ async function getMpesaToken() {
     }
 }
 
-// STK Push (Lipa Na M-Pesa Online)
+// STK Push
 app.post('/api/mpesa/stkpush', async (req, res) => {
     try {
         const { phone, amount, booking_id } = req.body;
@@ -457,13 +479,11 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
             return res.status(500).json({ error: 'Failed to get M-Pesa access token' });
         }
         
-        // Generate timestamp and password
         const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
         const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
         
         const axios = require('axios');
         
-        // STK Push request
         const stkResponse = await axios.post(
             'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
             {
@@ -488,8 +508,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
             }
         );
         
-        // Save payment request to database
-        db.query(
+        queryDb(
             'INSERT INTO payments (booking_id, amount, method, status, reference) VALUES (?, ?, ?, ?, ?)',
             [booking_id, amount, 'M-Pesa', 'Pending', stkResponse.data.CheckoutRequestID],
             (dbErr) => {
@@ -561,7 +580,7 @@ app.post('/api/mpesa/check-status', async (req, res) => {
     }
 });
 
-// M-Pesa Callback Endpoint (for Daraja to notify payment status)
+// M-Pesa Callback
 app.post('/api/mpesa/callback', express.json(), (req, res) => {
     console.log('📥 M-Pesa Callback received:', JSON.stringify(req.body, null, 2));
     
@@ -573,10 +592,9 @@ app.post('/api/mpesa/callback', express.json(), (req, res) => {
     const { stkCallback } = Body;
     const { CheckoutRequestID, ResultCode, ResultDesc } = stkCallback;
     
-    // Update payment status in database
     const status = ResultCode === '0' ? 'Success' : 'Failed';
     
-    db.query(
+    queryDb(
         'UPDATE payments SET status = ?, reference = ? WHERE reference = ?',
         [status, ResultDesc, CheckoutRequestID],
         (err) => {
@@ -585,9 +603,8 @@ app.post('/api/mpesa/callback', express.json(), (req, res) => {
             } else {
                 console.log('✅ Payment status updated:', CheckoutRequestID, status);
                 
-                // If payment successful, update booking status
                 if (status === 'Success') {
-                    db.query(
+                    queryDb(
                         'UPDATE bookings SET status = "Confirmed" WHERE id = (SELECT booking_id FROM payments WHERE reference = ?)',
                         [CheckoutRequestID]
                     );
@@ -596,37 +613,41 @@ app.post('/api/mpesa/callback', express.json(), (req, res) => {
         }
     );
     
-    // Always respond with 200 to acknowledge receipt
     res.json({ ResultCode: 0, ResultDesc: 'Success' });
 });
 
-// ============ ERROR HANDLERS (Prevent Server Crashes) ============
+// ============ ERROR HANDLERS ============
 
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);
-    // Log but don't exit - Railway will handle restarts
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-    // Log but don't exit
 });
 
-// Handle graceful shutdown (Railway sends SIGTERM)
 process.on('SIGTERM', () => {
     console.log('🔄 SIGTERM received, shutting down gracefully...');
-    db.end(() => {
-        console.log('✅ Database pool closed');
+    if (db && db.end) {
+        db.end(() => {
+            console.log('✅ Database connection closed');
+            process.exit(0);
+        });
+    } else {
         process.exit(0);
-    });
+    }
 });
 
 process.on('SIGINT', () => {
     console.log('🔄 SIGINT received, shutting down gracefully...');
-    db.end(() => {
-        console.log('✅ Database pool closed');
+    if (db && db.end) {
+        db.end(() => {
+            console.log('✅ Database connection closed');
+            process.exit(0);
+        });
+    } else {
         process.exit(0);
-    });
+    }
 });
 
 // ============ START SERVER ============
@@ -636,14 +657,11 @@ const HOST = process.env.HOST || '0.0.0.0';
 const server = app.listen(PORT, HOST, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-    console.log(`🌐 CORS allowed: ${corsOptions.origin.join(', ')}`);
     console.log('✅ Server initialized successfully');
 });
 
-// Handle server-level errors
 server.on('error', (err) => {
     console.error('❌ Server error:', err);
 });
 
-// Export app for testing (optional)
 module.exports = app;
