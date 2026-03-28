@@ -13,54 +13,48 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ============ DATABASE CONNECTION ============
-let db;
+// ============ DATABASE CONNECTION POOL (More Reliable) ============
+const pool = mysql.createPool({
+    connectionLimit: 10,
+    uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
+    waitForConnections: true,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
+});
 
-function connectDatabase() {
-    const dbConfig = process.env.DATABASE_URL || process.env.MYSQL_URL 
-        ? { uri: process.env.DATABASE_URL || process.env.MYSQL_URL }
-        : {
-            host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-            database: process.env.DB_NAME || 'twende_tours',
-            port: process.env.DB_PORT || 3306
-        };
-    
-    db = mysql.createConnection(dbConfig);
-    
-    db.connect((err) => {
-        if (err) {
-            console.error('❌ Database connection failed:', err.message);
-            setTimeout(connectDatabase, 5000);
-        } else {
-            console.log('✅ Connected to MySQL database!');
-        }
-    });
-    
-    db.on('error', (err) => {
-        console.error('❌ MySQL error:', err);
-        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-            console.log('🔄 Reconnecting to database...');
-            connectDatabase();
-        }
+// Test pool connection
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('❌ Database pool connection failed:', err.message);
+    } else {
+        console.log('✅ Connected to MySQL database pool!');
+        connection.release();
+    }
+});
+
+// Helper function for queries using pool
+function query(sql, params) {
+    return new Promise((resolve, reject) => {
+        pool.query(sql, params, (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+        });
     });
 }
 
-connectDatabase();
-
 // ============ HEALTH CHECK ============
-app.get('/health', (req, res) => {
-    db.query('SELECT 1', (err) => {
-        if (err) {
-            return res.status(503).json({ 
-                status: 'error', 
-                database: 'disconnected',
-                error: err.message 
-            });
-        }
+app.get('/health', async (req, res) => {
+    try {
+        await query('SELECT 1');
         res.json({ status: 'ok', database: 'connected' });
-    });
+    } catch (err) {
+        res.status(503).json({ 
+            status: 'error', 
+            database: 'disconnected',
+            error: err.message 
+        });
+    }
 });
 
 app.get('/', (req, res) => {
@@ -73,8 +67,8 @@ app.get('/', (req, res) => {
 
 // ============ API ROUTES ============
 
-// Login - FIXED: Direct database query without state check
-app.post('/api/login', (req, res) => {
+// Login - Using async/await with pool
+app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
@@ -83,144 +77,92 @@ app.post('/api/login', (req, res) => {
     
     console.log('🔐 Login attempt:', email);
     
-    // ✅ FIXED: Direct query without state check
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-        if (err) {
-            console.error('❌ Login DB error:', err);
-            return res.status(500).json({ error: err.message });
-        }
+    try {
+        const results = await query('SELECT * FROM users WHERE email = ?', [email]);
+        
         if (results.length === 0) {
             return res.json({ success: false, message: 'Invalid credentials' });
         }
         
         const user = results[0];
+        const isValid = await bcrypt.compare(password, user.password);
         
-        try {
-            const isValid = await bcrypt.compare(password, user.password);
-            
-            if (!isValid) {
-                return res.json({ success: false, message: 'Invalid credentials' });
-            }
-            if (user.role === 'staff' && !user.is_approved) {
-                return res.json({ success: false, message: 'Account pending approval' });
-            }
-            
-            const { password: _, ...userWithoutPassword } = user;
-            
-            console.log('✅ Login successful:', user.email);
-            res.json({ 
-                success: true, 
-                user: userWithoutPassword, 
-                role: user.role === 'manager' ? 'admin' : user.role 
-            });
-        } catch (bcryptErr) {
-            console.error('❌ Bcrypt error:', bcryptErr);
-            return res.status(500).json({ error: 'Authentication error' });
+        if (!isValid) {
+            return res.json({ success: false, message: 'Invalid credentials' });
         }
-    });
+        if (user.role === 'staff' && !user.is_approved) {
+            return res.json({ success: false, message: 'Account pending approval' });
+        }
+        
+        const { password: _, ...userWithoutPassword } = user;
+        console.log('✅ Login successful:', user.email);
+        
+        res.json({ 
+            success: true, 
+            user: userWithoutPassword, 
+            role: user.role === 'manager' ? 'admin' : user.role 
+        });
+    } catch (err) {
+        console.error('❌ Login error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Register
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
     const { name, email, password, phone, interest } = req.body;
     
     if (!name || !email || !password) {
         return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
     }
     
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            console.error('❌ Hash error:', err);
-            return res.status(500).json({ error: err.message });
-        }
+    console.log('📝 Registration attempt:', email);
+    
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         
-        db.query(
+        await query(
             'INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [name, email, hashedPassword, 'client', phone || '', interest || '', true],
-            (err, result) => {
-                if (err) {
-                    console.error('❌ Register DB error:', err);
-                    if (err.code === 'ER_DUP_ENTRY') {
-                        return res.json({ success: false, message: 'Email already exists' });
-                    }
-                    return res.status(500).json({ error: err.message });
-                }
-                console.log('✅ Registration successful:', email);
-                res.json({ success: true, message: 'Registration successful', userId: result.insertId });
-            }
+            [name, email, hashedPassword, 'client', phone || '', interest || '', true]
         );
-    });
+        
+        console.log('✅ Registration successful:', email);
+        res.json({ success: true, message: 'Registration successful' });
+    } catch (err) {
+        console.error('❌ Register error:', err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.json({ success: false, message: 'Email already exists' });
+        }
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Get Fleet
-app.get('/api/fleet', (req, res) => {
+app.get('/api/fleet', async (req, res) => {
     console.log('🚗 Fleet request received');
-    db.query('SELECT * FROM fleet ORDER BY name', (err, results) => {
-        if (err) {
-            console.error('❌ Fleet DB error:', err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ success: true,  results });
-    });
-});
-
-// Update Fleet Status
-app.put('/api/fleet/:id/status', (req, res) => {
-    const { status } = req.body;
-    const { id } = req.params;
-    
-    if (!status) {
-        return res.status(400).json({ error: 'Status is required' });
+    try {
+        const results = await query('SELECT * FROM fleet ORDER BY name');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Fleet error:', err);
+        res.status(500).json({ error: err.message });
     }
-    
-    db.query('UPDATE fleet SET status = ? WHERE id = ?', [status, id], (err, result) => {
-        if (err) {
-            console.error('❌ Update fleet error:', err);
-            return res.status(500).json({ error: err.message });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Vehicle not found' });
-        }
-        res.json({ success: true, message: 'Fleet status updated' });
-    });
 });
 
 // Get Bookings
-app.get('/api/bookings', (req, res) => {
+app.get('/api/bookings', async (req, res) => {
     console.log('📋 Bookings request received');
-    db.query('SELECT * FROM bookings ORDER BY created_at DESC', (err, results) => {
-        if (err) {
-            console.error('❌ Bookings DB error:', err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ success: true,  results });
-    });
-});
-
-// Check Availability
-app.post('/api/bookings/check-availability', (req, res) => {
-    const { vehicle_id, start_date, end_date } = req.body;
-    
-    if (!vehicle_id || !start_date || !end_date) {
-        return res.status(400).json({ success: false, error: 'vehicle_id, start_date, and end_date are required' });
+    try {
+        const results = await query('SELECT * FROM bookings ORDER BY created_at DESC');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Bookings error:', err);
+        res.status(500).json({ error: err.message });
     }
-    
-    db.query(
-        `SELECT * FROM bookings WHERE vehicle_id = ? AND status IN ('Pending', 'Confirmed') 
-         AND ((start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?))`,
-        [vehicle_id, start_date, end_date, start_date, end_date],
-        (err, results) => {
-            if (err) {
-                console.error('❌ Availability error:', err);
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ success: true, available: results.length === 0 });
-        }
-    );
 });
 
 // Create Booking
-app.post('/api/bookings', (req, res) => {
+app.post('/api/bookings', async (req, res) => {
     const { user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount } = req.body;
     
     console.log('📥 Creating booking:', { user_id, vehicle_id, destination, amount });
@@ -229,43 +171,18 @@ app.post('/api/bookings', (req, res) => {
         return res.status(400).json({ error: 'user_id and vehicle_id are required' });
     }
     
-    db.query(
-        'INSERT INTO bookings (user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Pending")',
-        [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0],
-        (err, result) => {
-            if (err) {
-                console.error('❌ Booking DB error:', err);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log('✅ Booking created:', result.insertId);
-            res.json({ success: true, bookingId: result.insertId });
-        }
-    );
-});
-
-// Update Booking Status
-app.put('/api/bookings/:id/status', (req, res) => {
-    const { status } = req.body;
-    const { id } = req.params;
-    
-    db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id], (err) => {
-        if (err) {
-            console.error('❌ Update booking error:', err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ success: true, message: 'Booking status updated' });
-    });
-});
-
-// Get Users
-app.get('/api/users', (req, res) => {
-    db.query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users', (err, results) => {
-        if (err) {
-            console.error('❌ Users DB error:', err);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ success: true,  results });
-    });
+    try {
+        const result = await query(
+            'INSERT INTO bookings (user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Pending")',
+            [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0]
+        );
+        
+        console.log('✅ Booking created:', result.insertId);
+        res.json({ success: true, bookingId: result.insertId });
+    } catch (err) {
+        console.error('❌ Booking error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ============ M-PESA ROUTES ============
@@ -353,6 +270,15 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('🔄 SIGTERM received, shutting down gracefully...');
+    pool.end(() => {
+        console.log('✅ Database pool closed');
+        process.exit(0);
+    });
 });
 
 // ============ START SERVER ============
