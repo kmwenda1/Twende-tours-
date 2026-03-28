@@ -110,11 +110,9 @@
     </div>
 
     <script>
-        // API Base URL - auto-detect environment
-        const API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : window.location.origin;
-
+        // 🔥 RAILWAY BACKEND URL - UPDATE THIS TO YOUR ACTUAL RAILWAY URL 🔥
+        const API_BASE_URL = 'https://twende-tours-production.up.railway.app';
+        
         // Initialize icons
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -140,7 +138,7 @@
             });
         }
 
-        // Login handler
+        // Login handler - Points to Railway backend
         async function handleLogin(e) {
             e.preventDefault();
             
@@ -154,6 +152,7 @@
             errorDiv.style.display = 'none';
             
             try {
+                // 🔥 API call to Railway backend 🔥
                 const response = await fetch(`${API_BASE_URL}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -186,7 +185,7 @@
             }
         }
 
-        // Register handler
+        // Register handler - Points to Railway backend
         async function handleRegister(e) {
             e.preventDefault();
             
@@ -206,6 +205,7 @@
             successDiv.style.display = 'none';
             
             try {
+                // 🔥 API call to Railway backend 🔥
                 const response = await fetch(`${API_BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
