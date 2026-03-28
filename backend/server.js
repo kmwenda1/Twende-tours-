@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const app = express();
 
 // ============ CORS CONFIGURATION ============
@@ -12,6 +13,15 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json());
+
+// ============ SERVE STATIC FILES ============
+app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '..')));
+
+// Serve client.html at root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client.html'));
+});
 
 // ============ DATABASE CONNECTION POOL (FIXES TIMEOUT) ============
 const pool = mysql.createPool({
@@ -57,7 +67,7 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.json({ 
         message: 'Twende Tours API',
         status: 'running',
@@ -233,7 +243,7 @@ app.post('/api/inquiries', async (req, res) => {
     }
 });
 
-// ============ M-PESA ROUTES (INTACT!) ============
+// ============ M-PESA ROUTES ============
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
@@ -257,7 +267,7 @@ async function getMpesaToken() {
     }
 }
 
-// STK Push - DARAJA API (INTACT!)
+// STK Push
 app.post('/api/mpesa/stkpush', async (req, res) => {
     try {
         const { phone, amount, booking_id } = req.body;
@@ -313,7 +323,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
     }
 });
 
-// Check Payment Status - DARAJA API (INTACT!)
+// Check Payment Status
 app.post('/api/mpesa/check-status', async (req, res) => {
     try {
         const { checkoutRequestID } = req.body;
@@ -357,7 +367,7 @@ app.post('/api/mpesa/check-status', async (req, res) => {
     }
 });
 
-// M-Pesa Callback - DARAJA API (INTACT!)
+// M-Pesa Callback
 app.post('/api/mpesa/callback', express.json(), (req, res) => {
     console.log('📥 M-Pesa Callback received:', JSON.stringify(req.body, null, 2));
     
