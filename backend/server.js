@@ -7,8 +7,8 @@ const app = express();
 
 // ============ CORS CONFIGURATION ============
 app.use(cors({
-    origin: '*',
-    credentials: true,
+    origin: ['https://twende-tours.vercel.app', 'http://localhost:3000', '*'],
+    credentials: false,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
