@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ============ DATABASE CONNECTION POOL (More Reliable) ============
+// ============ DATABASE CONNECTION ============
 const pool = mysql.createPool({
     connectionLimit: 10,
     uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
@@ -33,7 +33,7 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// Helper function for queries using pool
+// Helper function for queries
 function query(sql, params) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, (err, results) => {
@@ -61,13 +61,13 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Twende Tours API',
         status: 'running',
-        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/health']
+        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/health']
     });
 });
 
 // ============ API ROUTES ============
 
-// Login - Using async/await with pool
+// Login
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     
@@ -185,6 +185,54 @@ app.post('/api/bookings', async (req, res) => {
     }
 });
 
+// Get Users - ADDED
+app.get('/api/users', async (req, res) => {
+    console.log('👥 Users request received');
+    try {
+        const results = await query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Users error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Inquiries - ADDED
+app.get('/api/inquiries', async (req, res) => {
+    console.log('📩 Inquiries request received');
+    try {
+        const results = await query('SELECT * FROM inquiries ORDER BY created_at DESC');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Inquiries error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create Inquiry - ADDED
+app.post('/api/inquiries', async (req, res) => {
+    const { client_name, client_email, client_phone, destination, notes, source } = req.body;
+    
+    console.log('📝 Creating inquiry:', { client_name, client_email });
+    
+    if (!client_name || !client_email) {
+        return res.status(400).json({ error: 'Client name and email are required' });
+    }
+    
+    try {
+        const result = await query(
+            'INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)',
+            [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website']
+        );
+        
+        console.log('✅ Inquiry created:', result.insertId);
+        res.json({ success: true, inquiryId: result.insertId });
+    } catch (err) {
+        console.error('❌ Inquiry error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ============ M-PESA ROUTES ============
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
@@ -270,15 +318,6 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('🔄 SIGTERM received, shutting down gracefully...');
-    pool.end(() => {
-        console.log('✅ Database pool closed');
-        process.exit(0);
-    });
 });
 
 // ============ START SERVER ============
