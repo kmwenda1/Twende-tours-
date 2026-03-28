@@ -13,65 +13,24 @@
     
     <!-- M-Pesa Payment Styles -->
     <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .spinner {
-            width: 20px; height: 20px;
-            border: 3px solid #10b981;
-            border-top: 3px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        .payment-success {
-            background: #d1fae5; color: #065f46;
-            padding: 12px; border-radius: 8px;
-            border: 2px solid #10b981;
-        }
-        .payment-error {
-            background: #fee2e2; color: #991b1b;
-            padding: 12px; border-radius: 8px;
-        }
-        .payment-loading {
-            color: #065f46; display: flex; align-items: center;
-        }
-        .vehicle-card {
-            background: white; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner { width: 20px; height: 20px; border: 3px solid #10b981; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; vertical-align: middle; }
+        .payment-success { background: #d1fae5; color: #065f46; padding: 12px; border-radius: 8px; border: 2px solid #10b981; }
+        .payment-error { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; }
+        .payment-loading { color: #065f46; display: flex; align-items: center; }
+        .vehicle-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; }
         .vehicle-card:hover { transform: translateY(-4px); }
-        .vehicle-image {
-            width: 100%; height: 200px; object-fit: cover;
-        }
+        .vehicle-image { width: 100%; height: 200px; object-fit: cover; }
         .vehicle-info { padding: 16px; }
-        .vehicle-type {
-            color: var(--text-light); font-size: 0.875rem; margin-bottom: 8px;
-        }
-        .vehicle-description {
-            color: var(--text-medium); font-size: 0.9rem; margin-bottom: 12px;
-        }
-        .vehicle-specs {
-            display: flex; gap: 16px; margin-bottom: 12px; color: var(--text-medium);
-        }
-        .vehicle-rate {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px;
-        }
+        .vehicle-type { color: var(--text-light); font-size: 0.875rem; margin-bottom: 8px; }
+        .vehicle-description { color: var(--text-medium); font-size: 0.9rem; margin-bottom: 12px; }
+        .vehicle-specs { display: flex; gap: 16px; margin-bottom: 12px; color: var(--text-medium); }
+        .vehicle-rate { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .rate-amount { font-weight: 700; color: var(--primary-gold); font-size: 1.25rem; }
         .rate-period { color: var(--text-light); font-size: 0.875rem; }
-        .btn:disabled {
-            opacity: 0.6; cursor: not-allowed;
-        }
-        .fleet-empty {
-            text-align: center; padding: 40px; color: var(--text-light);
-        }
-        .fleet-loading {
-            text-align: center; padding: 40px;
-        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .fleet-empty { text-align: center; padding: 40px; color: var(--text-light); }
+        .fleet-loading { text-align: center; padding: 40px; }
     </style>
 </head>
 <body>
@@ -83,75 +42,60 @@
         </div>
         <nav class="portal-nav">
             <a href="javascript:void(0)" onclick="showSection('dashboard')" class="nav-link active">
-                <i data-lucide="layout-dashboard" width="18" height="18"></i>
-                Dashboard
+                <i data-lucide="layout-dashboard" width="18" height="18"></i> Dashboard
             </a>
             <a href="javascript:void(0)" onclick="showSection('myTrips')" class="nav-link">
-                <i data-lucide="calendar" width="18" height="18"></i>
-                My Trips
+                <i data-lucide="calendar" width="18" height="18"></i> My Trips
             </a>
             <a href="javascript:void(0)" onclick="showSection('fleet')" class="nav-link">
-                <i data-lucide="truck" width="18" height="18"></i>
-                Browse Fleet
+                <i data-lucide="truck" width="18" height="18"></i> Browse Fleet
             </a>
             <a href="javascript:void(0)" onclick="showSection('profile')" class="nav-link">
-                <i data-lucide="user" width="18" height="18"></i>
-                Profile
+                <i data-lucide="user" width="18" height="18"></i> Profile
             </a>
             <a href="javascript:void(0)" class="logout-btn" onclick="handleLogout()">
-                <i data-lucide="log-out" width="18" height="18"></i>
-                Logout
+                <i data-lucide="log-out" width="18" height="18"></i> Logout
             </a>
         </nav>
     </header>
 
     <!-- Main Content -->
     <main class="portal-main">
-        
         <!-- Dashboard Section -->
         <section id="dashboardSection" class="portal-section">
             <div class="section-hero">
                 <h1 class="hero-title">Jambo, <span id="dashUserName">Client</span>!</h1>
                 <p class="hero-subtitle">Welcome back to your safari adventure dashboard</p>
                 <button class="btn-primary" onclick="openRequestModal()">
-                    <i data-lucide="plus-circle" width="20" height="20"></i>
-                    Request New Safari
+                    <i data-lucide="plus-circle" width="20" height="20"></i> Request New Safari
                 </button>
             </div>
 
             <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i data-lucide="calendar-check" width="24" height="24"></i>
-                    </div>
+                    <div class="stat-icon blue"><i data-lucide="calendar-check" width="24" height="24"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" id="statTotalTrips">0</div>
                         <div class="stat-label">Total Trips</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon yellow">
-                        <i data-lucide="clock" width="24" height="24"></i>
-                    </div>
+                    <div class="stat-icon yellow"><i data-lucide="clock" width="24" height="24"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" id="statUpcoming">0</div>
                         <div class="stat-label">Upcoming</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i data-lucide="check-circle" width="24" height="24"></i>
-                    </div>
+                    <div class="stat-icon green"><i data-lucide="check-circle" width="24" height="24"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" id="statCompleted">0</div>
                         <div class="stat-label">Completed</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon purple">
-                        <i data-lucide="dollar-sign" width="24" height="24"></i>
-                    </div>
+                    <div class="stat-icon purple"><i data-lucide="dollar-sign" width="24" height="24"></i></div>
                     <div class="stat-info">
                         <div class="stat-number" id="statTotalSpent">$0</div>
                         <div class="stat-label">Total Spent</div>
@@ -161,13 +105,8 @@
 
             <!-- Recent Trips -->
             <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="calendar" width="20" height="20"></i>
-                    Upcoming Trips
-                </h2>
-                <div id="recentTripsContainer">
-                    <!-- Trips loaded here -->
-                </div>
+                <h2 class="card-title"><i data-lucide="calendar" width="20" height="20"></i> Upcoming Trips</h2>
+                <div id="recentTripsContainer"></div>
             </div>
         </section>
 
@@ -177,80 +116,16 @@
                 <h1 class="hero-title">My Trips</h1>
                 <p class="hero-subtitle">View and manage all your safari adventures</p>
             </div>
-
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i data-lucide="calendar-check" width="24" height="24"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number" id="tripsStatTotal">0</div>
-                        <div class="stat-label">Total Trips</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon yellow">
-                        <i data-lucide="clock" width="24" height="24"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number" id="tripsStatUpcoming">0</div>
-                        <div class="stat-label">Upcoming</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i data-lucide="check-circle" width="24" height="24"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number" id="tripsStatCompleted">0</div>
-                        <div class="stat-label">Completed</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon purple">
-                        <i data-lucide="dollar-sign" width="24" height="24"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number" id="tripsStatSpent">$0</div>
-                        <div class="stat-label">Total Spent</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Upcoming Trips -->
             <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="calendar" width="20" height="20"></i>
-                    Upcoming Trips
-                </h2>
-                <div id="upcomingTripsContainer">
-                    <!-- Upcoming trips loaded here -->
-                </div>
-            </div>
-
-            <!-- Trip History -->
-            <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="history" width="20" height="20"></i>
-                    Trip History
-                </h2>
+                <h2 class="card-title"><i data-lucide="history" width="20" height="20"></i> Trip History</h2>
                 <div class="table-responsive">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>DESTINATION</th>
-                                <th>VEHICLE</th>
-                                <th>DATES</th>
-                                <th>TRAVELERS</th>
-                                <th>COST</th>
-                                <th>STATUS</th>
-                                <th>ACTIONS</th>
+                                <th>DESTINATION</th><th>VEHICLE</th><th>DATES</th><th>TRAVELERS</th><th>COST</th><th>STATUS</th><th>ACTIONS</th>
                             </tr>
                         </thead>
-                        <tbody id="tripHistoryBody">
-                            <!-- Trip history loaded here -->
-                        </tbody>
+                        <tbody id="tripHistoryBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -262,19 +137,13 @@
                 <h1 class="hero-title">Our Safari Fleet</h1>
                 <p class="hero-subtitle">Choose from our premium selection of safari vehicles</p>
             </div>
-
-            <!-- Fleet Filter -->
             <div class="fleet-filters">
                 <button class="filter-btn active" onclick="filterFleet('all')">All Vehicles</button>
                 <button class="filter-btn" onclick="filterFleet('Available')">Available</button>
                 <button class="filter-btn" onclick="filterFleet('4x4')">4x4 Vehicles</button>
                 <button class="filter-btn" onclick="filterFleet('Van')">Vans</button>
             </div>
-
-            <!-- Fleet Grid -->
-            <div class="fleet-grid" id="fleetGrid">
-                <!-- Fleet cards loaded here by JavaScript -->
-            </div>
+            <div class="fleet-grid" id="fleetGrid"></div>
         </section>
 
         <!-- Profile Section -->
@@ -283,160 +152,30 @@
                 <h1 class="hero-title">My Profile</h1>
                 <p class="hero-subtitle">Manage your account settings and preferences</p>
             </div>
-
-            <!-- Profile Header -->
             <div class="profile-header-card">
-                <div class="profile-avatar">
-                    <i data-lucide="user" width="48" height="48"></i>
-                </div>
+                <div class="profile-avatar"><i data-lucide="user" width="48" height="48"></i></div>
                 <h2 class="profile-name" id="profileName">Client User</h2>
                 <p class="profile-email" id="profileEmail">client@example.com</p>
             </div>
-
-            <!-- Profile Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="profileStatTrips">0</div>
-                    <div class="stat-label">Total Trips</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="profileStatUpcoming">0</div>
-                    <div class="stat-label">Upcoming</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="profileStatSpent">$0</div>
-                    <div class="stat-label">Total Spent</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="profileStatCompleted">0</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-            </div>
-
-            <!-- Personal Information -->
             <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="user" width="20" height="20"></i>
-                    Personal Information
-                </h2>
+                <h2 class="card-title"><i data-lucide="user" width="20" height="20"></i> Personal Information</h2>
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" class="form-control" id="profileFullName" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" class="form-control" id="profileEmailAddress" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="tel" class="form-control" id="profilePhone" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Member Since</label>
-                        <input type="text" class="form-control" id="profileMemberSince" readonly>
-                    </div>
+                    <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="profileFullName" readonly></div>
+                    <div class="form-group"><label>Email Address</label><input type="email" class="form-control" id="profileEmailAddress" readonly></div>
+                    <div class="form-group"><label>Phone Number</label><input type="tel" class="form-control" id="profilePhone" readonly></div>
+                    <div class="form-group"><label>Member Since</label><input type="text" class="form-control" id="profileMemberSince" readonly></div>
                 </div>
-            </div>
-
-            <!-- Travel Preferences -->
-            <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="heart" width="20" height="20"></i>
-                    Travel Preferences
-                </h2>
-                
-                <div class="preferences-section">
-                    <h3 class="preferences-title">Preferred Destinations</h3>
-                    <div class="checkbox-grid">
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="prefMasaiMara">
-                            <span>Masai Mara</span>
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="prefAmboseli">
-                            <span>Amboseli</span>
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="prefSerengeti">
-                            <span>Serengeti</span>
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="prefTsavo">
-                            <span>Tsavo</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="preferences-section">
-                    <h3 class="preferences-title">Preferred Vehicle Type</h3>
-                    <div class="radio-grid">
-                        <label class="radio-item">
-                            <input type="radio" name="vehicleType" value="Safari Van">
-                            <span>Safari Van</span>
-                        </label>
-                        <label class="radio-item">
-                            <input type="radio" name="vehicleType" value="Land Cruiser">
-                            <span>Land Cruiser</span>
-                        </label>
-                        <label class="radio-item">
-                            <input type="radio" name="vehicleType" value="Minibus">
-                            <span>Minibus</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="preferences-section">
-                    <h3 class="preferences-title">Special Requirements</h3>
-                    <textarea class="form-control" id="specialRequirements" rows="3" placeholder="Dietary restrictions, accessibility needs, etc."></textarea>
-                </div>
-            </div>
-
-            <!-- Communication Preferences -->
-            <div class="content-card">
-                <h2 class="card-title">
-                    <i data-lucide="bell" width="20" height="20"></i>
-                    Communication Preferences
-                </h2>
-                <div class="checkbox-list">
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="commEmail" checked>
-                        <span>Email notifications for booking updates</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="commSMS" checked>
-                        <span>SMS notifications for trip reminders</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" id="commPromo">
-                        <span>Promotional offers and newsletters</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="profile-actions">
-                <button class="btn-outline" onclick="changePassword()">
-                    <i data-lucide="lock" width="16" height="16"></i>
-                    Change Password
-                </button>
-                <button class="btn-primary" onclick="saveProfile()">
-                    <i data-lucide="check" width="16" height="16"></i>
-                    Save Changes
-                </button>
             </div>
         </section>
     </main>
 
-    <!-- Request Safari Modal (Updated with Payment) -->
+    <!-- Request Safari Modal -->
     <div id="requestModal" class="modal-portal">
         <div class="modal-portal-content">
             <div class="modal-header">
                 <h2 class="modal-title">Request New Safari</h2>
                 <button class="close-modal" onclick="closeRequestModal()">&times;</button>
             </div>
-            
-            <!-- Booking Form -->
             <form id="bookingForm" onsubmit="submitSafariRequest(event)">
                 <div class="form-group">
                     <label>Destination</label>
@@ -454,39 +193,18 @@
                     <label>Special Requirements</label>
                     <textarea id="reqNotes" class="form-control" rows="3" placeholder="Any special needs..."></textarea>
                 </div>
-                <button type="submit" class="btn-primary btn-full" id="submitBookingBtn">
-                    Submit Request
-                </button>
+                <button type="submit" class="btn-primary btn-full" id="submitBookingBtn">Submit Request</button>
             </form>
-
-            <!-- M-Pesa Payment Section (Hidden by default) -->
             <div id="paymentSection" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-color);">
                 <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 2px solid #10b981;">
                     <h3 style="color: #065f46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="smartphone" width="20" height="20"></i>
-                        Pay with M-Pesa
+                        <i data-lucide="smartphone" width="20" height="20"></i> Pay with M-Pesa
                     </h3>
-                    <p style="color: #374151; margin-bottom: 16px; font-size: 0.9rem;">
-                        Enter your M-Pesa number to receive payment request
-                    </p>
-                    
+                    <p style="color: #374151; margin-bottom: 16px; font-size: 0.9rem;">Enter your M-Pesa number to receive payment request</p>
                     <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                        <input 
-                            type="tel" 
-                            id="mpesaPhone" 
-                            placeholder="254700000000" 
-                            style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;"
-                            value="254708374149"
-                        />
-                        <button 
-                            onclick="handleMpesaPaymentSubmit()" 
-                            class="btn-primary"
-                            style="background: #10b981; padding: 12px 20px; white-space: nowrap;"
-                        >
-                            Pay Now
-                        </button>
+                        <input type="tel" id="mpesaPhone" placeholder="254700000000" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;" value="254708374149"/>
+                        <button onclick="handleMpesaPaymentSubmit()" class="btn-primary" style="background: #10b981; padding: 12px 20px; white-space: nowrap;">Pay Now</button>
                     </div>
-                    
                     <div id="paymentStatus" style="display: none;"></div>
                 </div>
             </div>
@@ -495,13 +213,9 @@
 
     <!-- Scripts -->
     <script src="backend.js"></script>
-    
-    <!-- Client Page Logic -->
     <script>
         // Initialize Icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        if (typeof lucide !== 'undefined') { lucide.createIcons(); }
 
         // Global variables
         let allFleet = [];
@@ -511,148 +225,71 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Client page loaded');
-            
-            // Get current user
             currentUser = getCurrentUser();
-            if (!currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            // Update UI with user info
+            if (!currentUser) { window.location.href = 'index.html'; return; }
             updateUserInfo();
-            
-            // Load dashboard stats
             loadDashboardStats();
-            
-            // Load fleet for the fleet section (pre-load for faster display)
             await loadFleet();
         });
 
-        // Update user info in UI
         function updateUserInfo() {
             if (!currentUser) return;
-            
-            // Dashboard
             document.getElementById('dashUserName').textContent = currentUser.name || 'Client';
-            
-            // Profile
             document.getElementById('profileName').textContent = currentUser.name || 'Client User';
             document.getElementById('profileEmail').textContent = currentUser.email || '';
             document.getElementById('profileFullName').value = currentUser.name || '';
             document.getElementById('profileEmailAddress').value = currentUser.email || '';
             document.getElementById('profilePhone').value = currentUser.phone || '';
-            
-            // Set member since (fallback)
             document.getElementById('profileMemberSince').value = '2024';
         }
 
-        // Show/Hide sections
         function showSection(sectionId) {
-            // Hide all sections
-            document.querySelectorAll('.portal-section').forEach(sec => {
-                sec.classList.add('hidden-section');
-            });
-            
-            // Show requested section
+            document.querySelectorAll('.portal-section').forEach(sec => sec.classList.add('hidden-section'));
             const section = document.getElementById(sectionId + 'Section');
-            if (section) {
-                section.classList.remove('hidden-section');
-            }
-            
-            // Update nav active state
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
+            if (section) section.classList.remove('hidden-section');
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             event?.target?.closest('.nav-link')?.classList.add('active');
-            
-            // Load section-specific data
-            if (sectionId === 'fleet') {
-                renderFleet(allFleet);
-            } else if (sectionId === 'dashboard') {
-                loadDashboardStats();
-            } else if (sectionId === 'myTrips') {
-                loadMyTrips();
-            } else if (sectionId === 'profile') {
-                loadProfileStats();
-            }
-            
-            // Re-initialize icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            if (sectionId === 'fleet') renderFleet(allFleet);
+            else if (sectionId === 'dashboard') loadDashboardStats();
+            else if (sectionId === 'myTrips') loadMyTrips();
+            else if (sectionId === 'profile') loadProfileStats();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // ✅ FIXED: Logout function - prevent infinite loop
         function handleLogout() {
             console.log('🚪 Logging out...');
             sessionStorage.removeItem('twende_user');
             window.location.href = 'index.html';
         }
 
-        // Load Dashboard Stats - FIXED Total Spent calculation
         async function loadDashboardStats() {
             try {
                 const stats = await getDashboardStats();
-                console.log('📊 Dashboard stats:', stats);
-                
                 document.getElementById('statTotalTrips').textContent = stats.totalBookings || 0;
                 document.getElementById('statUpcoming').textContent = stats.confirmedBookings || 0;
                 document.getElementById('statCompleted').textContent = '0';
-                
-                // ✅ FIXED: Ensure numeric calculation
                 const revenue = parseFloat(stats.totalRevenue) || 0;
-                document.getElementById('statTotalSpent').textContent = 
-                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    
-            } catch (error) {
-                console.error('❌ Error loading stats:', error);
-            }
+                document.getElementById('statTotalSpent').textContent = `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } catch (error) { console.error('❌ Error loading stats:', error); }
         }
 
-        // Load My Trips - FIXED Total Spent calculation
         async function loadMyTrips() {
             try {
                 const bookings = await getBookings();
-                console.log('📋 Bookings:', bookings);
-                
-                // Filter for current user's bookings
                 const userBookings = bookings.filter(b => b.user_id === currentUser?.id);
-                
-                // Update stats
                 document.getElementById('tripsStatTotal').textContent = userBookings.length;
-                document.getElementById('tripsStatUpcoming').textContent = 
-                    userBookings.filter(b => b.status === 'Confirmed' || b.status === 'Pending').length;
-                document.getElementById('tripsStatCompleted').textContent = 
-                    userBookings.filter(b => b.status === 'Completed').length;
-                
-                // ✅ FIXED: Properly calculate total spent with parseFloat
-                const totalSpent = userBookings.reduce((sum, booking) => {
-                    const amount = parseFloat(booking.amount) || 0;
-                    return sum + amount;
-                }, 0);
-                
-                document.getElementById('tripsStatSpent').textContent = 
-                    `$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                
-                // Load trip history table
+                document.getElementById('tripsStatUpcoming').textContent = userBookings.filter(b => b.status === 'Confirmed' || b.status === 'Pending').length;
+                document.getElementById('tripsStatCompleted').textContent = userBookings.filter(b => b.status === 'Completed').length;
+                const totalSpent = userBookings.reduce((sum, booking) => sum + (parseFloat(booking.amount) || 0), 0);
+                document.getElementById('tripsStatSpent').textContent = `$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 renderTripHistory(userBookings);
-                
-            } catch (error) {
-                console.error('❌ Error loading trips:', error);
-            }
+            } catch (error) { console.error('❌ Error loading trips:', error); }
         }
 
-        // Render Trip History Table
         function renderTripHistory(bookings) {
             const tbody = document.getElementById('tripHistoryBody');
             if (!tbody) return;
-            
-            if (bookings.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No trips yet. Book your first safari!</td></tr>';
-                return;
-            }
-            
+            if (bookings.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center">No trips yet. Book your first safari!</td></tr>'; return; }
             tbody.innerHTML = bookings.map(booking => `
                 <tr>
                     <td>${booking.destination || 'N/A'}</td>
@@ -661,108 +298,54 @@
                     <td>${booking.travelers || 1}</td>
                     <td>KES ${(parseFloat(booking.amount) || 0).toLocaleString()}</td>
                     <td><span class="badge badge-${getStatusColor(booking.status)}">${booking.status}</span></td>
-                    <td>
-                        <button class="btn-sm" onclick="viewBookingDetails(${booking.id})">View</button>
-                    </td>
-                </tr>
-            `).join('');
+                    <td><button class="btn-sm" onclick="viewBookingDetails(${booking.id})">View</button></td>
+                </tr>`).join('');
         }
 
-        // Get badge color for status
         function getStatusColor(status) {
-            const colors = {
-                'Pending': 'yellow',
-                'Confirmed': 'blue',
-                'Completed': 'green',
-                'Cancelled': 'red'
-            };
+            const colors = { 'Pending': 'yellow', 'Confirmed': 'blue', 'Completed': 'green', 'Cancelled': 'red' };
             return colors[status] || 'gray';
         }
 
-        // View Booking Details
-        function viewBookingDetails(bookingId) {
-            alert(`Booking #${bookingId}\n\nDetails coming soon!`);
-        }
+        function viewBookingDetails(bookingId) { alert(`Booking #${bookingId}\n\nDetails coming soon!`); }
 
-        // Load Profile Stats - FIXED Total Spent calculation
         async function loadProfileStats() {
             try {
                 const stats = await getDashboardStats();
                 document.getElementById('profileStatTrips').textContent = stats.totalBookings || 0;
                 document.getElementById('profileStatUpcoming').textContent = stats.confirmedBookings || 0;
                 document.getElementById('profileStatCompleted').textContent = '0';
-                
-                // ✅ FIXED: Ensure numeric calculation
                 const revenue = parseFloat(stats.totalRevenue) || 0;
-                document.getElementById('profileStatSpent').textContent = 
-                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            } catch (error) {
-                console.error('❌ Error loading profile stats:', error);
-            }
+                document.getElementById('profileStatSpent').textContent = `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } catch (error) { console.error('❌ Error loading profile stats:', error); }
         }
 
-        // ============ FLEET FUNCTIONS ============
-
-        // Load Fleet from API
         async function loadFleet() {
             console.log('🚗 Loading fleet...');
             const fleetGrid = document.getElementById('fleetGrid');
-            
-            if (!fleetGrid) {
-                console.error('Fleet grid container not found');
-                return;
-            }
-            
-            // Show loading state
-            fleetGrid.innerHTML = `
-                <div class="fleet-loading">
-                    <div class="spinner"></div>
-                    <p>Loading vehicles...</p>
-                </div>
-            `;
-            
+            if (!fleetGrid) { console.error('Fleet grid container not found'); return; }
+            fleetGrid.innerHTML = `<div class="fleet-loading"><div class="spinner"></div><p>Loading vehicles...</p></div>`;
             try {
                 const vehicles = await getFleet();
-                console.log('📦 Fleet loaded:', vehicles);
-                
                 allFleet = vehicles || [];
-                
                 if (allFleet.length === 0) {
-                    fleetGrid.innerHTML = `
-                        <div class="fleet-empty">
-                            <i data-lucide="truck" width="48" height="48" style="opacity:0.3"></i>
-                            <p style="margin-top:16px">No vehicles available at the moment.<br>Please check back later!</p>
-                        </div>
-                    `;
+                    fleetGrid.innerHTML = `<div class="fleet-empty"><i data-lucide="truck" width="48" height="48" style="opacity:0.3"></i><p style="margin-top:16px">No vehicles available at the moment.<br>Please check back later!</p></div>`;
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                     return;
                 }
-                
-                // Render fleet
                 renderFleet(allFleet);
-                
             } catch (error) {
                 console.error('❌ Error loading fleet:', error);
-                fleetGrid.innerHTML = `
-                    <div class="fleet-empty">
-                        <p style="color:var(--error)">Failed to load vehicles.<br>Please check your connection and try again.</p>
-                        <button class="btn-outline" onclick="loadFleet()" style="margin-top:12px">Retry</button>
-                    </div>
-                `;
+                fleetGrid.innerHTML = `<div class="fleet-empty"><p style="color:var(--error)">Failed to load vehicles.<br>Please check your connection and try again.</p><button class="btn-outline" onclick="loadFleet()" style="margin-top:12px">Retry</button></div>`;
             }
         }
 
-        // Render Fleet Grid
         function renderFleet(vehicles) {
             const fleetGrid = document.getElementById('fleetGrid');
             if (!fleetGrid) return;
-            
             fleetGrid.innerHTML = vehicles.map(vehicle => `
                 <div class="vehicle-card">
-                    <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x200?text=No+Image'}" 
-                         alt="${vehicle.name}" 
-                         class="vehicle-image"
-                         onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                    <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${vehicle.name}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
                     <div class="vehicle-info">
                         <h3>${vehicle.name}</h3>
                         <p class="vehicle-type">${vehicle.type}</p>
@@ -775,73 +358,38 @@
                             <span class="rate-amount">KES ${vehicle.rate?.toLocaleString() || '0'}</span>
                             <span class="rate-period">per day</span>
                         </div>
-                        <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" 
-                                ${vehicle.status !== 'Available' ? 'disabled' : ''}>
+                        <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" ${vehicle.status !== 'Available' ? 'disabled' : ''}>
                             ${vehicle.status === 'Available' ? 'Book Now' : vehicle.status}
                         </button>
                     </div>
-                </div>
-            `).join('');
-            
-            // Re-initialize icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+                </div>`).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // Filter Fleet
         function filterFleet(filter) {
-            // Update active button
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event?.target?.classList.add('active');
-            
             let filtered = allFleet;
-            
-            if (filter === 'Available') {
-                filtered = allFleet.filter(v => v.status === 'Available');
-            } else if (filter === '4x4') {
-                filtered = allFleet.filter(v => v.type === '4x4');
-            } else if (filter === 'Van') {
-                filtered = allFleet.filter(v => v.type === 'Van' || v.type === 'Bus');
-            }
-            // 'all' shows everything
-            
+            if (filter === 'Available') filtered = allFleet.filter(v => v.status === 'Available');
+            else if (filter === '4x4') filtered = allFleet.filter(v => v.type === '4x4');
+            else if (filter === 'Van') filtered = allFleet.filter(v => v.type === 'Van' || v.type === 'Bus');
             renderFleet(filtered);
         }
 
-        // Book Vehicle
         function bookVehicle(vehicleId) {
             console.log('🎯 Booking vehicle:', vehicleId);
-            
             const vehicle = allFleet.find(v => v.id === vehicleId);
-            if (!vehicle) {
-                alert('Vehicle not found');
-                return;
-            }
-            
-            // Store selected vehicle
-            currentBooking = {
-                vehicle_id: vehicleId,
-                vehicle_name: vehicle.name,
-                rate: vehicle.rate
-            };
-            
-            // Open request modal pre-filled
+            if (!vehicle) { alert('Vehicle not found'); return; }
+            currentBooking = { vehicle_id: vehicleId, vehicle_name: vehicle.name, rate: vehicle.rate };
             openRequestModal();
-            document.getElementById('reqDestination').value = 'Masai Mara'; // Default
+            document.getElementById('reqDestination').value = 'Masai Mara';
         }
-
-        // ============ MODAL FUNCTIONS ============
 
         function openRequestModal() {
             const modal = document.getElementById('requestModal');
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
-            // Pre-fill if vehicle was selected
-            if (currentBooking) {
-                document.getElementById('reqDestination').value = 'Masai Mara';
-            }
+            if (currentBooking) document.getElementById('reqDestination').value = 'Masai Mara';
         }
 
         function closeRequestModal() {
@@ -853,57 +401,35 @@
             currentBooking = null;
         }
 
-        // Close modal when clicking outside
-        document.getElementById('requestModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeRequestModal();
-            }
-        });
+        document.getElementById('requestModal')?.addEventListener('click', function(e) { if (e.target === this) closeRequestModal(); });
 
-        // Submit Safari Request
         async function submitSafariRequest(e) {
             e.preventDefault();
-            
-            if (!currentUser) {
-                alert('Please login first');
-                return;
-            }
-            
+            if (!currentUser) { alert('Please login first'); return; }
             const btn = document.getElementById('submitBookingBtn');
             const originalText = btn.innerText;
             btn.innerText = 'Creating Booking...';
             btn.disabled = true;
-            
             try {
                 const bookingData = {
                     user_id: currentUser.id,
-                    vehicle_id: currentBooking?.vehicle_id || 101, // Default fallback
+                    vehicle_id: currentBooking?.vehicle_id,
                     destination: document.getElementById('reqDestination').value,
                     start_date: document.getElementById('reqDate').value,
-                    end_date: document.getElementById('reqDate').value, // Same day for now
+                    end_date: document.getElementById('reqDate').value,
                     travelers: document.getElementById('reqTravelers').value,
                     notes: document.getElementById('reqNotes').value,
                     amount: currentBooking?.rate || 18000
                 };
-                
+                if (!bookingData.vehicle_id) { alert('Please select a vehicle first'); closeRequestModal(); return; }
                 console.log('📝 Creating booking:', bookingData);
-                
                 const result = await createBooking(bookingData);
-                
                 if (result.success) {
                     console.log('✅ Booking created:', result);
-                    
-                    // Show payment section
                     document.getElementById('bookingForm').style.display = 'none';
                     document.getElementById('paymentSection').style.display = 'block';
-                    
-                    // Store booking ID for payment
                     currentBooking.bookingId = result.bookingId;
-                    
-                } else {
-                    alert(result.message || 'Failed to create booking. Please try again.');
-                }
-                
+                } else { alert(result.message || 'Failed to create booking. Please try again.'); }
             } catch (error) {
                 console.error('❌ Booking error:', error);
                 alert('Connection error. Please check your internet and try again.');
@@ -913,78 +439,28 @@
             }
         }
 
-        // ============ M-PESA PAYMENT ============
-        // ✅ FIXED: Renamed to avoid conflict with backend.js function
-        
         async function handleMpesaPaymentSubmit() {
             const phone = document.getElementById('mpesaPhone').value.trim();
             const statusDiv = document.getElementById('paymentStatus');
-            
-            if (!phone || !phone.startsWith('254')) {
-                alert('Please enter a valid M-Pesa number (e.g., 254708374149)');
-                return;
-            }
-            
-            if (!currentBooking?.bookingId) {
-                alert('No booking found. Please create a booking first.');
-                return;
-            }
-            
-            // Show loading
+            if (!phone || !phone.startsWith('254')) { alert('Please enter a valid M-Pesa number (e.g., 254708374149)'); return; }
+            if (!currentBooking?.bookingId) { alert('No booking found. Please create a booking first.'); return; }
             statusDiv.style.display = 'block';
-            statusDiv.innerHTML = `
-                <div class="payment-loading">
-                    <div class="spinner"></div>
-                    <span>Sending payment request to ${phone}...</span>
-                </div>
-            `;
-            
+            statusDiv.innerHTML = `<div class="payment-loading"><div class="spinner"></div><span>Sending payment request to ${phone}...</span></div>`;
             try {
                 const amount = currentBooking.rate || 18000;
-                
-                // ✅ Now correctly calls backend.js initiateMpesaPayment function
                 const result = await initiateMpesaPayment(phone, amount, currentBooking.bookingId);
-                
                 console.log('💰 M-Pesa result:', result);
-                
                 if (result.success) {
-                    statusDiv.innerHTML = `
-                        <div class="payment-success">
-                            <strong>✓ Payment Request Sent!</strong><br>
-                            Check your phone for the M-Pesa prompt.<br>
-                            Enter PIN <strong>4321</strong> to confirm (sandbox test).
-                        </div>
-                    `;
-                    
-                } else {
-                    statusDiv.innerHTML = `
-                        <div class="payment-error">
-                            <strong>✗ Payment Failed</strong><br>
-                            ${result.error || result.message || 'Please try again.'}
-                        </div>
-                    `;
-                }
-                
+                    statusDiv.innerHTML = `<div class="payment-success"><strong>✓ Payment Request Sent!</strong><br>Check your phone for the M-Pesa prompt.<br>Enter PIN <strong>4321</strong> to confirm (sandbox test).</div>`;
+                } else { statusDiv.innerHTML = `<div class="payment-error"><strong>✗ Payment Failed</strong><br>${result.error || result.message || 'Please try again.'}</div>`; }
             } catch (error) {
                 console.error('❌ M-Pesa error:', error);
-                statusDiv.innerHTML = `
-                    <div class="payment-error">
-                        <strong>✗ Connection Error</strong><br>
-                        Please check your internet and try again.
-                    </div>
-                `;
+                statusDiv.innerHTML = `<div class="payment-error"><strong>✗ Connection Error</strong><br>Please check your internet and try again.</div>`;
             }
         }
 
-        // ============ PROFILE FUNCTIONS ============
-
-        function saveProfile() {
-            alert('Profile updates coming soon! This feature will sync with the backend.');
-        }
-
-        function changePassword() {
-            alert('Password change coming soon!');
-        }
+        function saveProfile() { alert('Profile updates coming soon! This feature will sync with the backend.'); }
+        function changePassword() { alert('Password change coming soon!'); }
     </script>
 </body>
 </html>

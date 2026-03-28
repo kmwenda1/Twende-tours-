@@ -15,15 +15,14 @@ app.use(cors({
 app.use(express.json());
 
 // ============ SERVE STATIC FILES ============
-app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.static(path.join(__dirname, '..')));
 
-// Serve client.html at root
+// Serve index.html at root
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client.html'));
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// ============ DATABASE CONNECTION POOL ============
+// ============ DATABASE CONNECTION POOL (FIXES TIMEOUT) ============
 const pool = mysql.createPool({
     connectionLimit: 10,
     uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
@@ -59,20 +58,12 @@ app.get('/health', async (req, res) => {
         await query('SELECT 1');
         res.json({ status: 'ok', database: 'connected' });
     } catch (err) {
-        res.status(503).json({ 
-            status: 'error', 
-            database: 'disconnected',
-            error: err.message 
-        });
+        res.status(503).json({ status: 'error', database: 'disconnected', error: err.message });
     }
 });
 
 app.get('/api', (req, res) => {
-    res.json({ 
-        message: 'Twende Tours API',
-        status: 'running',
-        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/api/mpesa/stkpush', '/health']
-    });
+    res.json({ message: 'Twende Tours API', status: 'running', endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/api/mpesa/stkpush', '/health'] });
 });
 
 // ============ API ROUTES ============
@@ -80,38 +71,18 @@ app.get('/api', (req, res) => {
 // Login
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    
-    if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email and password are required' });
-    }
-    
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password are required' });
     console.log('🔐 Login attempt:', email);
-    
     try {
         const results = await query('SELECT * FROM users WHERE email = ?', [email]);
-        
-        if (results.length === 0) {
-            return res.json({ success: false, message: 'Invalid credentials' });
-        }
-        
+        if (results.length === 0) return res.json({ success: false, message: 'Invalid credentials' });
         const user = results[0];
         const isValid = await bcrypt.compare(password, user.password);
-        
-        if (!isValid) {
-            return res.json({ success: false, message: 'Invalid credentials' });
-        }
-        if (user.role === 'staff' && !user.is_approved) {
-            return res.json({ success: false, message: 'Account pending approval' });
-        }
-        
+        if (!isValid) return res.json({ success: false, message: 'Invalid credentials' });
+        if (user.role === 'staff' && !user.is_approved) return res.json({ success: false, message: 'Account pending approval' });
         const { password: _, ...userWithoutPassword } = user;
         console.log('✅ Login successful:', user.email);
-        
-        res.json({ 
-            success: true, 
-            user: userWithoutPassword, 
-            role: user.role === 'manager' ? 'admin' : user.role 
-        });
+        res.json({ success: true, user: userWithoutPassword, role: user.role === 'manager' ? 'admin' : user.role });
     } catch (err) {
         console.error('❌ Login error:', err);
         res.status(500).json({ error: err.message });
@@ -121,28 +92,16 @@ app.post('/api/login', async (req, res) => {
 // Register
 app.post('/api/register', async (req, res) => {
     const { name, email, password, phone, interest } = req.body;
-    
-    if (!name || !email || !password) {
-        return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
-    }
-    
+    if (!name || !email || !password) return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
     console.log('📝 Registration attempt:', email);
-    
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        await query(
-            'INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [name, email, hashedPassword, 'client', phone || '', interest || '', true]
-        );
-        
+        await query('INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, email, hashedPassword, 'client', phone || '', interest || '', true]);
         console.log('✅ Registration successful:', email);
         res.json({ success: true, message: 'Registration successful' });
     } catch (err) {
         console.error('❌ Register error:', err);
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.json({ success: false, message: 'Email already exists' });
-        }
+        if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Email already exists' });
         res.status(500).json({ error: err.message });
     }
 });
@@ -174,19 +133,10 @@ app.get('/api/bookings', async (req, res) => {
 // Create Booking
 app.post('/api/bookings', async (req, res) => {
     const { user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount } = req.body;
-    
     console.log('📥 Creating booking:', { user_id, vehicle_id, destination, amount });
-    
-    if (!user_id || !vehicle_id) {
-        return res.status(400).json({ error: 'user_id and vehicle_id are required' });
-    }
-    
+    if (!user_id || !vehicle_id) return res.status(400).json({ error: 'user_id and vehicle_id are required' });
     try {
-        const result = await query(
-            'INSERT INTO bookings (user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Pending")',
-            [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0]
-        );
-        
+        const result = await query('INSERT INTO bookings (user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "Pending")', [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0]);
         console.log('✅ Booking created:', result.insertId);
         res.json({ success: true, bookingId: result.insertId });
     } catch (err) {
@@ -222,19 +172,10 @@ app.get('/api/inquiries', async (req, res) => {
 // Create Inquiry
 app.post('/api/inquiries', async (req, res) => {
     const { client_name, client_email, client_phone, destination, notes, source } = req.body;
-    
     console.log('📝 Creating inquiry:', { client_name, client_email });
-    
-    if (!client_name || !client_email) {
-        return res.status(400).json({ error: 'Client name and email are required' });
-    }
-    
+    if (!client_name || !client_email) return res.status(400).json({ error: 'Client name and email are required' });
     try {
-        const result = await query(
-            'INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)',
-            [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website']
-        );
-        
+        const result = await query('INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)', [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website']);
         console.log('✅ Inquiry created:', result.insertId);
         res.json({ success: true, inquiryId: result.insertId });
     } catch (err) {
@@ -253,13 +194,9 @@ const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL || 'https://twende-tou
 
 async function getMpesaToken() {
     const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
-    
     try {
         const axios = require('axios');
-        const response = await axios.get(
-            'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-            { headers: { 'Authorization': `Basic ${auth}` }, timeout: 10000 }
-        );
+        const response = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', { headers: { 'Authorization': `Basic ${auth}` }, timeout: 10000 });
         return response.data.access_token;
     } catch (error) {
         console.error('❌ M-Pesa Token error:', error.message);
@@ -271,52 +208,19 @@ async function getMpesaToken() {
 app.post('/api/mpesa/stkpush', async (req, res) => {
     try {
         const { phone, amount, booking_id } = req.body;
-        
-        if (!phone || !amount || !booking_id) {
-            return res.status(400).json({ error: 'phone, amount, and booking_id are required' });
-        }
-        
+        if (!phone || !amount || !booking_id) return res.status(400).json({ error: 'phone, amount, and booking_id are required' });
         console.log('💰 M-Pesa STK Push:', phone, amount, booking_id);
-        
         const accessToken = await getMpesaToken();
-        if (!accessToken) {
-            return res.status(500).json({ error: 'Failed to get access token' });
-        }
-        
+        if (!accessToken) return res.status(500).json({ error: 'Failed to get access token' });
         const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
         const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
-        
         const axios = require('axios');
-        const stkResponse = await axios.post(
-            'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
-            {
-                BusinessShortCode: MPESA_SHORTCODE,
-                Password: password,
-                Timestamp: timestamp,
-                TransactionType: 'CustomerPayBillOnline',
-                Amount: parseInt(amount),
-                PartyA: phone,
-                PartyB: MPESA_SHORTCODE,
-                PhoneNumber: phone,
-                CallBackURL: MPESA_CALLBACK_URL,
-                AccountReference: 'TwendeTours',
-                TransactionDesc: `Booking ${booking_id}`
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 15000
-            }
-        );
-        
-        res.json({
-            success: true,
-            message: 'STK Push sent successfully',
-            checkoutRequestID: stkResponse.data.CheckoutRequestID
-        });
-        
+        const stkResponse = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+            BusinessShortCode: MPESA_SHORTCODE, Password: password, Timestamp: timestamp, TransactionType: 'CustomerPayBillOnline',
+            Amount: parseInt(amount), PartyA: phone, PartyB: MPESA_SHORTCODE, PhoneNumber: phone,
+            CallBackURL: MPESA_CALLBACK_URL, AccountReference: 'TwendeTours', TransactionDesc: `Booking ${booking_id}`
+        }, { headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, timeout: 15000 });
+        res.json({ success: true, message: 'STK Push sent successfully', checkoutRequestID: stkResponse.data.CheckoutRequestID });
     } catch (error) {
         console.error('❌ STK Push error:', error.response?.data || error.message);
         res.status(500).json({ error: 'STK Push failed', details: error.response?.data || error.message });
@@ -327,40 +231,16 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
 app.post('/api/mpesa/check-status', async (req, res) => {
     try {
         const { checkoutRequestID } = req.body;
-        
-        if (!checkoutRequestID) {
-            return res.status(400).json({ error: 'checkoutRequestID is required' });
-        }
-        
+        if (!checkoutRequestID) return res.status(400).json({ error: 'checkoutRequestID is required' });
         const accessToken = await getMpesaToken();
-        if (!accessToken) {
-            return res.status(500).json({ error: 'Failed to get access token' });
-        }
-        
+        if (!accessToken) return res.status(500).json({ error: 'Failed to get access token' });
         const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
         const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
-        
         const axios = require('axios');
-        
-        const statusResponse = await axios.post(
-            'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
-            {
-                BusinessShortCode: MPESA_SHORTCODE,
-                Password: password,
-                Timestamp: timestamp,
-                CheckoutRequestID: checkoutRequestID
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 15000
-            }
-        );
-        
+        const statusResponse = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query', {
+            BusinessShortCode: MPESA_SHORTCODE, Password: password, Timestamp: timestamp, CheckoutRequestID: checkoutRequestID
+        }, { headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, timeout: 15000 });
         res.json({ success: true, status: statusResponse.data });
-        
     } catch (error) {
         console.error('❌ Status check error:', error);
         res.status(500).json({ error: 'Status check failed', details: error.response?.data || error.message });
@@ -370,34 +250,18 @@ app.post('/api/mpesa/check-status', async (req, res) => {
 // M-Pesa Callback
 app.post('/api/mpesa/callback', express.json(), (req, res) => {
     console.log('📥 M-Pesa Callback received:', JSON.stringify(req.body, null, 2));
-    
     const { Body } = req.body;
-    if (!Body || !Body.stkCallback) {
-        return res.status(400).json({ error: 'Invalid callback format' });
-    }
-    
+    if (!Body || !Body.stkCallback) return res.status(400).json({ error: 'Invalid callback format' });
     const { stkCallback } = Body;
     const { CheckoutRequestID, ResultCode, ResultDesc } = stkCallback;
-    
     const status = ResultCode === '0' ? 'Success' : 'Failed';
-    
-    query(
-        'UPDATE payments SET status = ?, reference = ? WHERE reference = ?',
-        [status, ResultDesc, CheckoutRequestID]
-    ).catch(err => console.error('❌ Callback DB update error:', err));
-    
+    query('UPDATE payments SET status = ?, reference = ? WHERE reference = ?', [status, ResultDesc, CheckoutRequestID]).catch(err => console.error('❌ Callback DB update error:', err));
     res.json({ ResultCode: 0, ResultDesc: 'Success' });
 });
 
 // ============ ERROR HANDLERS ============
-
-process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection:', reason);
-});
+process.on('uncaughtException', (err) => { console.error('❌ Uncaught Exception:', err); });
+process.on('unhandledRejection', (reason, promise) => { console.error('❌ Unhandled Rejection:', reason); });
 
 // ============ START SERVER ============
 const PORT = process.env.PORT || 3000;
