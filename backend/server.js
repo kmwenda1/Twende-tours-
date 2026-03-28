@@ -185,11 +185,12 @@ app.post('/api/bookings', async (req, res) => {
     }
 });
 
-// Get Users - ADDED
+// Get Users - FIXED ENDPOINT
 app.get('/api/users', async (req, res) => {
     console.log('👥 Users request received');
     try {
         const results = await query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC');
+        console.log('✅ Users fetched:', results.length);
         res.json({ success: true, data: results });
     } catch (err) {
         console.error('❌ Users error:', err);
@@ -197,11 +198,12 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
-// Get Inquiries - ADDED
+// Get Inquiries - FIXED ENDPOINT
 app.get('/api/inquiries', async (req, res) => {
     console.log('📩 Inquiries request received');
     try {
         const results = await query('SELECT * FROM inquiries ORDER BY created_at DESC');
+        console.log('✅ Inquiries fetched:', results.length);
         res.json({ success: true, data: results });
     } catch (err) {
         console.error('❌ Inquiries error:', err);
@@ -209,7 +211,7 @@ app.get('/api/inquiries', async (req, res) => {
     }
 });
 
-// Create Inquiry - ADDED
+// Create Inquiry
 app.post('/api/inquiries', async (req, res) => {
     const { client_name, client_email, client_phone, destination, notes, source } = req.body;
     
