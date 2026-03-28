@@ -3,386 +3,988 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twende Tours | Login & Registration</title>
-    
-    <!-- Typography -->
+    <title>Client Portal | Twende Tours</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
-</head>
-<body class="auth-wrapper">
+    <link rel="stylesheet" href="client-styles.css">
     
-    <div class="auth-card">
-        <!-- Branding -->
-        <div class="auth-brand">
-            <div class="brand-icon">
-                <i data-lucide="compass" width="24" height="24"></i>
-            </div>
-            <h1>Twende Tours</h1>
-            <p>Optimizing Customer Inquiry Management</p>
+    <!-- M-Pesa Payment Styles -->
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            width: 20px; height: 20px;
+            border: 3px solid #10b981;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .payment-success {
+            background: #d1fae5; color: #065f46;
+            padding: 12px; border-radius: 8px;
+            border: 2px solid #10b981;
+        }
+        .payment-error {
+            background: #fee2e2; color: #991b1b;
+            padding: 12px; border-radius: 8px;
+        }
+        .payment-loading {
+            color: #065f46; display: flex; align-items: center;
+        }
+        .vehicle-card {
+            background: white; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .vehicle-card:hover { transform: translateY(-4px); }
+        .vehicle-image {
+            width: 100%; height: 200px; object-fit: cover;
+        }
+        .vehicle-info { padding: 16px; }
+        .vehicle-type {
+            color: var(--text-light); font-size: 0.875rem; margin-bottom: 8px;
+        }
+        .vehicle-description {
+            color: var(--text-medium); font-size: 0.9rem; margin-bottom: 12px;
+        }
+        .vehicle-specs {
+            display: flex; gap: 16px; margin-bottom: 12px; color: var(--text-medium);
+        }
+        .vehicle-rate {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px;
+        }
+        .rate-amount { font-weight: 700; color: var(--primary-gold); font-size: 1.25rem; }
+        .rate-period { color: var(--text-light); font-size: 0.875rem; }
+        .btn:disabled {
+            opacity: 0.6; cursor: not-allowed;
+        }
+        .fleet-empty {
+            text-align: center; padding: 40px; color: var(--text-light);
+        }
+        .fleet-loading {
+            text-align: center; padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="portal-header">
+        <div class="portal-logo">
+            <i data-lucide="compass" width="28" height="28"></i>
+            Twende Tours
         </div>
+        <nav class="portal-nav">
+            <a href="javascript:void(0)" onclick="showSection('dashboard')" class="nav-link active">
+                <i data-lucide="layout-dashboard" width="18" height="18"></i>
+                Dashboard
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('myTrips')" class="nav-link">
+                <i data-lucide="calendar" width="18" height="18"></i>
+                My Trips
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('fleet')" class="nav-link">
+                <i data-lucide="truck" width="18" height="18"></i>
+                Browse Fleet
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('profile')" class="nav-link">
+                <i data-lucide="user" width="18" height="18"></i>
+                Profile
+            </a>
+            <a href="javascript:void(0)" class="logout-btn" onclick="handleLogout()">
+                <i data-lucide="log-out" width="18" height="18"></i>
+                Logout
+            </a>
+        </nav>
+    </header>
 
-        <!-- Login Form -->
-        <div id="loginForm">
-            <h3>Welcome Back</h3>
-            <p class="form-subtitle">Enter your details to access your account.</p>
-            
-            <form onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label for="loginEmail">Email Address</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="name@twende.com" required>
+    <!-- Main Content -->
+    <main class="portal-main">
+        
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="portal-section">
+            <div class="section-hero">
+                <h1 class="hero-title">Jambo, <span id="dashUserName">Client</span>!</h1>
+                <p class="hero-subtitle">Welcome back to your safari adventure dashboard</p>
+                <button class="btn-primary" onclick="openRequestModal()">
+                    <i data-lucide="plus-circle" width="20" height="20"></i>
+                    Request New Safari
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i data-lucide="calendar-check" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="statTotalTrips">0</div>
+                        <div class="stat-label">Total Trips</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="loginPass">Password</label>
-                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i data-lucide="clock" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="statUpcoming">0</div>
+                        <div class="stat-label">Upcoming</div>
+                    </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i data-lucide="check-circle" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="statCompleted">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i data-lucide="dollar-sign" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="statTotalSpent">$0</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Trips -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="calendar" width="20" height="20"></i>
+                    Upcoming Trips
+                </h2>
+                <div id="recentTripsContainer">
+                    <!-- Trips loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- My Trips Section -->
+        <section id="myTripsSection" class="portal-section hidden-section">
+            <div class="section-hero">
+                <h1 class="hero-title">My Trips</h1>
+                <p class="hero-subtitle">View and manage all your safari adventures</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i data-lucide="calendar-check" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="tripsStatTotal">0</div>
+                        <div class="stat-label">Total Trips</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i data-lucide="clock" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="tripsStatUpcoming">0</div>
+                        <div class="stat-label">Upcoming</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i data-lucide="check-circle" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="tripsStatCompleted">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i data-lucide="dollar-sign" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="tripsStatSpent">$0</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Trips -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="calendar" width="20" height="20"></i>
+                    Upcoming Trips
+                </h2>
+                <div id="upcomingTripsContainer">
+                    <!-- Upcoming trips loaded here -->
+                </div>
+            </div>
+
+            <!-- Trip History -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="history" width="20" height="20"></i>
+                    Trip History
+                </h2>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>DESTINATION</th>
+                                <th>VEHICLE</th>
+                                <th>DATES</th>
+                                <th>TRAVELERS</th>
+                                <th>COST</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tripHistoryBody">
+                            <!-- Trip history loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Browse Fleet Section -->
+        <section id="fleetSection" class="portal-section hidden-section">
+            <div class="section-hero">
+                <h1 class="hero-title">Our Safari Fleet</h1>
+                <p class="hero-subtitle">Choose from our premium selection of safari vehicles</p>
+            </div>
+
+            <!-- Fleet Filter -->
+            <div class="fleet-filters">
+                <button class="filter-btn active" onclick="filterFleet('all')">All Vehicles</button>
+                <button class="filter-btn" onclick="filterFleet('Available')">Available</button>
+                <button class="filter-btn" onclick="filterFleet('4x4')">4x4 Vehicles</button>
+                <button class="filter-btn" onclick="filterFleet('Van')">Vans</button>
+            </div>
+
+            <!-- Fleet Grid -->
+            <div class="fleet-grid" id="fleetGrid">
+                <!-- Fleet cards loaded here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Profile Section -->
+        <section id="profileSection" class="portal-section hidden-section">
+            <div class="section-hero">
+                <h1 class="hero-title">My Profile</h1>
+                <p class="hero-subtitle">Manage your account settings and preferences</p>
+            </div>
+
+            <!-- Profile Header -->
+            <div class="profile-header-card">
+                <div class="profile-avatar">
+                    <i data-lucide="user" width="48" height="48"></i>
+                </div>
+                <h2 class="profile-name" id="profileName">Client User</h2>
+                <p class="profile-email" id="profileEmail">client@example.com</p>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="profileStatTrips">0</div>
+                    <div class="stat-label">Total Trips</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="profileStatUpcoming">0</div>
+                    <div class="stat-label">Upcoming</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="profileStatSpent">$0</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="profileStatCompleted">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <!-- Personal Information -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="user" width="20" height="20"></i>
+                    Personal Information
+                </h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" class="form-control" id="profileFullName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" class="form-control" id="profileEmailAddress" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" class="form-control" id="profilePhone" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Member Since</label>
+                        <input type="text" class="form-control" id="profileMemberSince" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Travel Preferences -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="heart" width="20" height="20"></i>
+                    Travel Preferences
+                </h2>
                 
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox"> Remember me
+                <div class="preferences-section">
+                    <h3 class="preferences-title">Preferred Destinations</h3>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="prefMasaiMara">
+                            <span>Masai Mara</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="prefAmboseli">
+                            <span>Amboseli</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="prefSerengeti">
+                            <span>Serengeti</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="prefTsavo">
+                            <span>Tsavo</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3 class="preferences-title">Preferred Vehicle Type</h3>
+                    <div class="radio-grid">
+                        <label class="radio-item">
+                            <input type="radio" name="vehicleType" value="Safari Van">
+                            <span>Safari Van</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="vehicleType" value="Land Cruiser">
+                            <span>Land Cruiser</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="vehicleType" value="Minibus">
+                            <span>Minibus</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h3 class="preferences-title">Special Requirements</h3>
+                    <textarea class="form-control" id="specialRequirements" rows="3" placeholder="Dietary restrictions, accessibility needs, etc."></textarea>
+                </div>
+            </div>
+
+            <!-- Communication Preferences -->
+            <div class="content-card">
+                <h2 class="card-title">
+                    <i data-lucide="bell" width="20" height="20"></i>
+                    Communication Preferences
+                </h2>
+                <div class="checkbox-list">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="commEmail" checked>
+                        <span>Email notifications for booking updates</span>
                     </label>
-                    <a href="#" class="forgot-link" onclick="openForgotPassword()">Forgot Password?</a>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="commSMS" checked>
+                        <span>SMS notifications for trip reminders</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="commPromo">
+                        <span>Promotional offers and newsletters</span>
+                    </label>
                 </div>
-                
-                <button type="submit" class="btn btn-navy btn-lg">
-                    Sign In
+            </div>
+
+            <!-- Actions -->
+            <div class="profile-actions">
+                <button class="btn-outline" onclick="changePassword()">
+                    <i data-lucide="lock" width="16" height="16"></i>
+                    Change Password
+                </button>
+                <button class="btn-primary" onclick="saveProfile()">
+                    <i data-lucide="check" width="16" height="16"></i>
+                    Save Changes
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Request Safari Modal (Updated with Payment) -->
+    <div id="requestModal" class="modal-portal">
+        <div class="modal-portal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Request New Safari</h2>
+                <button class="close-modal" onclick="closeRequestModal()">&times;</button>
+            </div>
+            
+            <!-- Booking Form -->
+            <form id="bookingForm" onsubmit="submitSafariRequest(event)">
+                <div class="form-group">
+                    <label>Destination</label>
+                    <input type="text" id="reqDestination" class="form-control" placeholder="e.g., Masai Mara" required>
+                </div>
+                <div class="form-group">
+                    <label>Preferred Date</label>
+                    <input type="date" id="reqDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Number of Travelers</label>
+                    <input type="number" id="reqTravelers" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Special Requirements</label>
+                    <textarea id="reqNotes" class="form-control" rows="3" placeholder="Any special needs..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary btn-full" id="submitBookingBtn">
+                    Submit Request
                 </button>
             </form>
-            
-            <div class="divider">
-                <span>OR</span>
-            </div>
-            
-            <div class="form-footer">
-                <p>
-                    Don't have an account? 
-                    <a href="#" onclick="toggleView('register')">Register here</a>
-                </p>
-                <p class="staff-note">
-                    Staff? Contact Admin for credentials.
-                </p>
-            </div>
-        </div>
 
-        <!-- Registration Form -->
-        <div id="registerForm" class="hidden">
-            <h3>Create Traveler Profile</h3>
-            <p class="form-subtitle">Join us for seamless safaris and group adventures.</p>
-            
-            <form onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label for="regName">Full Name</label>
-                    <input type="text" id="regName" class="form-control" placeholder="John Doe" required>
+            <!-- M-Pesa Payment Section (Hidden by default) -->
+            <div id="paymentSection" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 2px solid var(--border-color);">
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 2px solid #10b981;">
+                    <h3 style="color: #065f46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="smartphone" width="20" height="20"></i>
+                        Pay with M-Pesa
+                    </h3>
+                    <p style="color: #374151; margin-bottom: 16px; font-size: 0.9rem;">
+                        Enter your M-Pesa number to receive payment request
+                    </p>
+                    
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <input 
+                            type="tel" 
+                            id="mpesaPhone" 
+                            placeholder="254700000000" 
+                            style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;"
+                            value="254708374149"
+                        />
+                        <button 
+                            onclick="handleMpesaPaymentSubmit()" 
+                            class="btn-primary"
+                            style="background: #10b981; padding: 12px 20px; white-space: nowrap;"
+                        >
+                            Pay Now
+                        </button>
+                    </div>
+                    
+                    <div id="paymentStatus" style="display: none;"></div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="regEmail">Email Address</label>
-                    <input type="email" id="regEmail" class="form-control" placeholder="john@example.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="regPhone">Phone Number (WhatsApp)</label>
-                    <input type="tel" id="regPhone" class="form-control" placeholder="+254 700 000 000" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="regInterest">Primary Interest</label>
-                    <select id="regInterest" class="form-control" required>
-                        <option value="" disabled selected>Select your interest</option>
-                        <option value="Safari">Safari & Wildlife</option>
-                        <option value="Car Hire">Car Hire</option>
-                        <option value="Group Adventure">Group Adventure</option>
-                        <option value="Corporate Travel">Corporate Travel</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="regPass">Create Password</label>
-                    <input type="password" id="regPass" class="form-control" placeholder="••••••••" required>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" checked> 
-                        <span>I agree to receive trip updates and offers via WhatsApp/Email</span>
-                    </label>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-lg">
-                    Register & Explore
-                </button>
-            </form>
-            
-            <div class="form-footer">
-                <p>
-                    Already have an account? 
-                    <a href="#" onclick="toggleView('login')">Login here</a>
-                </p>
             </div>
         </div>
     </div>
 
-    <!-- Forgot Password Modal -->
-    <div id="forgotPasswordModal" class="modal-overlay">
-        <div class="modal-content">
-            <!-- Step 1: Enter Email -->
-            <div id="resetStep1">
-                <div class="modal-header">
-                    <i data-lucide="key" width="28" height="28"></i>
-                    <h3>Forgot Password?</h3>
-                </div>
-                <p class="modal-subtitle">
-                    No worries! Enter your email address below and we'll help you reset your password.
-                </p>
-                <div class="form-group">
-                    <label for="resetEmail">Email Address</label>
-                    <input type="email" id="resetEmail" class="form-control" placeholder="name@twende.com">
-                </div>
-                <button class="btn btn-navy btn-lg" onclick="verifyEmailForReset()">
-                    Continue
-                </button>
-                <button class="btn btn-outline btn-lg" onclick="closeForgotPassword()">
-                    Cancel
-                </button>
-            </div>
-            
-            <!-- Step 2: Set New Password -->
-            <div id="resetStep2" class="hidden">
-                <div class="success-message">
-                    <i data-lucide="check-circle" width="20" height="20"></i>
-                    <span>Email verified successfully!</span>
-                </div>
-                <p class="modal-subtitle">
-                    Enter your new password below. Make sure it's at least 4 characters long.
-                </p>
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <input type="password" id="newPassword" class="form-control" placeholder="••••••••">
-                </div>
-                <div class="form-group">
-                    <label for="confirmPassword">Confirm New Password</label>
-                    <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••">
-                </div>
-                <button class="btn btn-primary btn-lg" onclick="completePasswordReset()">
-                    Reset Password
-                </button>
-                <button class="btn btn-outline btn-lg" onclick="closeForgotPassword()">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Backend Logic -->
+    <!-- Scripts -->
     <script src="backend.js"></script>
     
-    <!-- Page Logic -->
+    <!-- Client Page Logic -->
     <script>
         // Initialize Icons
-        lucide.createIcons();
-
-        // Toggle between Login and Register views
-        function toggleView(view) {
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-            
-            if (view === 'register') {
-                loginForm.classList.add('hidden');
-                registerForm.classList.remove('hidden');
-            } else {
-                registerForm.classList.add('hidden');
-                loginForm.classList.remove('hidden');
-            }
+        if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
 
-        // Forgot Password Functions
-        function openForgotPassword() {
-            const modal = document.getElementById('forgotPasswordModal');
-            modal.classList.add('active');
-            document.getElementById('resetStep1').classList.remove('hidden');
-            document.getElementById('resetStep2').classList.add('hidden');
-            document.getElementById('resetEmail').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            document.body.style.overflow = 'hidden';
+        // Global variables
+        let allFleet = [];
+        let currentUser = null;
+        let currentBooking = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Client page loaded');
+            
+            // Get current user
+            currentUser = getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Update UI with user info
+            updateUserInfo();
+            
+            // Load dashboard stats
+            loadDashboardStats();
+            
+            // Load fleet for the fleet section (pre-load for faster display)
+            await loadFleet();
+        });
+
+        // Update user info in UI
+        function updateUserInfo() {
+            if (!currentUser) return;
+            
+            // Dashboard
+            document.getElementById('dashUserName').textContent = currentUser.name || 'Client';
+            
+            // Profile
+            document.getElementById('profileName').textContent = currentUser.name || 'Client User';
+            document.getElementById('profileEmail').textContent = currentUser.email || '';
+            document.getElementById('profileFullName').value = currentUser.name || '';
+            document.getElementById('profileEmailAddress').value = currentUser.email || '';
+            document.getElementById('profilePhone').value = currentUser.phone || '';
+            
+            // Set member since (fallback)
+            document.getElementById('profileMemberSince').value = '2024';
         }
 
-        function closeForgotPassword() {
-            const modal = document.getElementById('forgotPasswordModal');
+        // Show/Hide sections
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.portal-section').forEach(sec => {
+                sec.classList.add('hidden-section');
+            });
+            
+            // Show requested section
+            const section = document.getElementById(sectionId + 'Section');
+            if (section) {
+                section.classList.remove('hidden-section');
+            }
+            
+            // Update nav active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event?.target?.closest('.nav-link')?.classList.add('active');
+            
+            // Load section-specific data
+            if (sectionId === 'fleet') {
+                renderFleet(allFleet);
+            } else if (sectionId === 'dashboard') {
+                loadDashboardStats();
+            } else if (sectionId === 'myTrips') {
+                loadMyTrips();
+            } else if (sectionId === 'profile') {
+                loadProfileStats();
+            }
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // ✅ FIXED: Logout function - prevent infinite loop
+        function handleLogout() {
+            console.log('🚪 Logging out...');
+            sessionStorage.removeItem('twende_user');
+            window.location.href = 'index.html';
+        }
+
+        // Load Dashboard Stats - FIXED Total Spent calculation
+        async function loadDashboardStats() {
+            try {
+                const stats = await getDashboardStats();
+                console.log('📊 Dashboard stats:', stats);
+                
+                document.getElementById('statTotalTrips').textContent = stats.totalBookings || 0;
+                document.getElementById('statUpcoming').textContent = stats.confirmedBookings || 0;
+                document.getElementById('statCompleted').textContent = '0';
+                
+                // ✅ FIXED: Ensure numeric calculation
+                const revenue = parseFloat(stats.totalRevenue) || 0;
+                document.getElementById('statTotalSpent').textContent = 
+                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    
+            } catch (error) {
+                console.error('❌ Error loading stats:', error);
+            }
+        }
+
+        // Load My Trips - FIXED Total Spent calculation
+        async function loadMyTrips() {
+            try {
+                const bookings = await getBookings();
+                console.log('📋 Bookings:', bookings);
+                
+                // Filter for current user's bookings
+                const userBookings = bookings.filter(b => b.user_id === currentUser?.id);
+                
+                // Update stats
+                document.getElementById('tripsStatTotal').textContent = userBookings.length;
+                document.getElementById('tripsStatUpcoming').textContent = 
+                    userBookings.filter(b => b.status === 'Confirmed' || b.status === 'Pending').length;
+                document.getElementById('tripsStatCompleted').textContent = 
+                    userBookings.filter(b => b.status === 'Completed').length;
+                
+                // ✅ FIXED: Properly calculate total spent with parseFloat
+                const totalSpent = userBookings.reduce((sum, booking) => {
+                    const amount = parseFloat(booking.amount) || 0;
+                    return sum + amount;
+                }, 0);
+                
+                document.getElementById('tripsStatSpent').textContent = 
+                    `$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                
+                // Load trip history table
+                renderTripHistory(userBookings);
+                
+            } catch (error) {
+                console.error('❌ Error loading trips:', error);
+            }
+        }
+
+        // Render Trip History Table
+        function renderTripHistory(bookings) {
+            const tbody = document.getElementById('tripHistoryBody');
+            if (!tbody) return;
+            
+            if (bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No trips yet. Book your first safari!</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = bookings.map(booking => `
+                <tr>
+                    <td>${booking.destination || 'N/A'}</td>
+                    <td>Vehicle #${booking.vehicle_id}</td>
+                    <td>${booking.start_date || 'N/A'} - ${booking.end_date || 'N/A'}</td>
+                    <td>${booking.travelers || 1}</td>
+                    <td>KES ${(parseFloat(booking.amount) || 0).toLocaleString()}</td>
+                    <td><span class="badge badge-${getStatusColor(booking.status)}">${booking.status}</span></td>
+                    <td>
+                        <button class="btn-sm" onclick="viewBookingDetails(${booking.id})">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Get badge color for status
+        function getStatusColor(status) {
+            const colors = {
+                'Pending': 'yellow',
+                'Confirmed': 'blue',
+                'Completed': 'green',
+                'Cancelled': 'red'
+            };
+            return colors[status] || 'gray';
+        }
+
+        // View Booking Details
+        function viewBookingDetails(bookingId) {
+            alert(`Booking #${bookingId}\n\nDetails coming soon!`);
+        }
+
+        // Load Profile Stats - FIXED Total Spent calculation
+        async function loadProfileStats() {
+            try {
+                const stats = await getDashboardStats();
+                document.getElementById('profileStatTrips').textContent = stats.totalBookings || 0;
+                document.getElementById('profileStatUpcoming').textContent = stats.confirmedBookings || 0;
+                document.getElementById('profileStatCompleted').textContent = '0';
+                
+                // ✅ FIXED: Ensure numeric calculation
+                const revenue = parseFloat(stats.totalRevenue) || 0;
+                document.getElementById('profileStatSpent').textContent = 
+                    `$${revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } catch (error) {
+                console.error('❌ Error loading profile stats:', error);
+            }
+        }
+
+        // ============ FLEET FUNCTIONS ============
+
+        // Load Fleet from API
+        async function loadFleet() {
+            console.log('🚗 Loading fleet...');
+            const fleetGrid = document.getElementById('fleetGrid');
+            
+            if (!fleetGrid) {
+                console.error('Fleet grid container not found');
+                return;
+            }
+            
+            // Show loading state
+            fleetGrid.innerHTML = `
+                <div class="fleet-loading">
+                    <div class="spinner"></div>
+                    <p>Loading vehicles...</p>
+                </div>
+            `;
+            
+            try {
+                const vehicles = await getFleet();
+                console.log('📦 Fleet loaded:', vehicles);
+                
+                allFleet = vehicles || [];
+                
+                if (allFleet.length === 0) {
+                    fleetGrid.innerHTML = `
+                        <div class="fleet-empty">
+                            <i data-lucide="truck" width="48" height="48" style="opacity:0.3"></i>
+                            <p style="margin-top:16px">No vehicles available at the moment.<br>Please check back later!</p>
+                        </div>
+                    `;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+                
+                // Render fleet
+                renderFleet(allFleet);
+                
+            } catch (error) {
+                console.error('❌ Error loading fleet:', error);
+                fleetGrid.innerHTML = `
+                    <div class="fleet-empty">
+                        <p style="color:var(--error)">Failed to load vehicles.<br>Please check your connection and try again.</p>
+                        <button class="btn-outline" onclick="loadFleet()" style="margin-top:12px">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Fleet Grid
+        function renderFleet(vehicles) {
+            const fleetGrid = document.getElementById('fleetGrid');
+            if (!fleetGrid) return;
+            
+            fleetGrid.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-card">
+                    <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                         alt="${vehicle.name}" 
+                         class="vehicle-image"
+                         onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                    <div class="vehicle-info">
+                        <h3>${vehicle.name}</h3>
+                        <p class="vehicle-type">${vehicle.type}</p>
+                        <p class="vehicle-description">${vehicle.description || 'Premium safari vehicle with excellent game viewing capabilities.'}</p>
+                        <div class="vehicle-specs">
+                            <span><i data-lucide="users" width="16"></i> ${vehicle.seats || 6} seats</span>
+                            <span><i data-lucide="briefcase" width="16"></i> ${vehicle.bags || 4} bags</span>
+                        </div>
+                        <div class="vehicle-rate">
+                            <span class="rate-amount">KES ${vehicle.rate?.toLocaleString() || '0'}</span>
+                            <span class="rate-period">per day</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" 
+                                ${vehicle.status !== 'Available' ? 'disabled' : ''}>
+                            ${vehicle.status === 'Available' ? 'Book Now' : vehicle.status}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Re-initialize icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        // Filter Fleet
+        function filterFleet(filter) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event?.target?.classList.add('active');
+            
+            let filtered = allFleet;
+            
+            if (filter === 'Available') {
+                filtered = allFleet.filter(v => v.status === 'Available');
+            } else if (filter === '4x4') {
+                filtered = allFleet.filter(v => v.type === '4x4');
+            } else if (filter === 'Van') {
+                filtered = allFleet.filter(v => v.type === 'Van' || v.type === 'Bus');
+            }
+            // 'all' shows everything
+            
+            renderFleet(filtered);
+        }
+
+        // Book Vehicle
+        function bookVehicle(vehicleId) {
+            console.log('🎯 Booking vehicle:', vehicleId);
+            
+            const vehicle = allFleet.find(v => v.id === vehicleId);
+            if (!vehicle) {
+                alert('Vehicle not found');
+                return;
+            }
+            
+            // Store selected vehicle
+            currentBooking = {
+                vehicle_id: vehicleId,
+                vehicle_name: vehicle.name,
+                rate: vehicle.rate
+            };
+            
+            // Open request modal pre-filled
+            openRequestModal();
+            document.getElementById('reqDestination').value = 'Masai Mara'; // Default
+        }
+
+        // ============ MODAL FUNCTIONS ============
+
+        function openRequestModal() {
+            const modal = document.getElementById('requestModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Pre-fill if vehicle was selected
+            if (currentBooking) {
+                document.getElementById('reqDestination').value = 'Masai Mara';
+            }
+        }
+
+        function closeRequestModal() {
+            const modal = document.getElementById('requestModal');
             modal.classList.remove('active');
             document.body.style.overflow = '';
+            document.getElementById('bookingForm').reset();
+            document.getElementById('paymentSection').style.display = 'none';
+            currentBooking = null;
         }
 
         // Close modal when clicking outside
-        document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
+        document.getElementById('requestModal')?.addEventListener('click', function(e) {
             if (e.target === this) {
-                closeForgotPassword();
+                closeRequestModal();
             }
         });
 
-        function verifyEmailForReset() {
-            const email = document.getElementById('resetEmail').value.trim();
-            
-            if (!email) {
-                alert('Please enter your email address.');
-                return;
-            }
-            
-            // For production: Check against Railway backend
-            // For now, fallback to localStorage for demo
-            const db = typeof getDB === 'function' ? getDB() : null;
-            if (db && db.users) {
-                const user = db.users.find(u => u.email === email);
-                if (user) {
-                    document.getElementById('resetStep1').classList.add('hidden');
-                    document.getElementById('resetStep2').classList.remove('hidden');
-                    lucide.createIcons();
-                    return;
-                }
-            }
-            
-            // Fallback: Always allow for demo purposes
-            document.getElementById('resetStep1').classList.add('hidden');
-            document.getElementById('resetStep2').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function completePasswordReset() {
-            const email = document.getElementById('resetEmail').value.trim();
-            const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
-            
-            if (!newPass || newPass.length < 4) {
-                alert('Password must be at least 4 characters long.');
-                return;
-            }
-            
-            if (newPass !== confirmPass) {
-                alert('Passwords do not match. Please try again.');
-                return;
-            }
-            
-            // For production: Update via Railway backend API
-            // For now, fallback to localStorage for demo
-            const db = typeof getDB === 'function' ? getDB() : null;
-            if (db && db.users) {
-                const user = db.users.find(u => u.email === email);
-                if (user) {
-                    user.pass = newPass;
-                    saveDB(db);
-                    alert('✓ Password reset successful!\n\nYou can now login with your new password.');
-                    closeForgotPassword();
-                    document.getElementById('loginEmail').value = email;
-                    document.getElementById('loginPass').value = '';
-                    return;
-                }
-            }
-            
-            // Fallback success message for demo
-            alert('✓ Password reset successful!\n\nYou can now login with your new password.');
-            closeForgotPassword();
-            document.getElementById('loginEmail').value = email;
-            document.getElementById('loginPass').value = '';
-        }
-
-        // ✅ FIXED: Handle Login Submission (async/await for Railway backend)
-        async function handleLogin(e) {
+        // Submit Safari Request
+        async function submitSafariRequest(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPass').value;
-            const btn = e.target.querySelector('button');
             
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+            
+            const btn = document.getElementById('submitBookingBtn');
             const originalText = btn.innerText;
-            btn.innerText = 'Signing In...';
+            btn.innerText = 'Creating Booking...';
             btn.disabled = true;
-
+            
             try {
-                // ✅ Use await for async login function from backend.js
-                const res = await login(email, pass);
+                const bookingData = {
+                    user_id: currentUser.id,
+                    vehicle_id: currentBooking?.vehicle_id || 101, // Default fallback
+                    destination: document.getElementById('reqDestination').value,
+                    start_date: document.getElementById('reqDate').value,
+                    end_date: document.getElementById('reqDate').value, // Same day for now
+                    travelers: document.getElementById('reqTravelers').value,
+                    notes: document.getElementById('reqNotes').value,
+                    amount: currentBooking?.rate || 18000
+                };
                 
-                console.log('🔐 Login response:', res);
+                console.log('📝 Creating booking:', bookingData);
                 
-                if (res && res.success) {
-                    // Redirect based on role
-                    if (res.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else if (res.role === 'staff') {
-                        window.location.href = 'staff.html';
-                    } else {
-                        window.location.href = 'client.html';
-                    }
+                const result = await createBooking(bookingData);
+                
+                if (result.success) {
+                    console.log('✅ Booking created:', result);
+                    
+                    // Show payment section
+                    document.getElementById('bookingForm').style.display = 'none';
+                    document.getElementById('paymentSection').style.display = 'block';
+                    
+                    // Store booking ID for payment
+                    currentBooking.bookingId = result.bookingId;
+                    
                 } else {
-                    alert(res?.message || 'Login failed. Please check your credentials.');
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+                    alert(result.message || 'Failed to create booking. Please try again.');
                 }
+                
             } catch (error) {
-                console.error('❌ Login error:', error);
+                console.error('❌ Booking error:', error);
                 alert('Connection error. Please check your internet and try again.');
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // ✅ FIXED: Handle Registration Submission (async/await for Railway backend)
-        async function handleRegister(e) {
-            e.preventDefault();
-            const data = {
-                name: document.getElementById('regName').value,
-                email: document.getElementById('regEmail').value,
-                phone: document.getElementById('regPhone').value,
-                interest: document.getElementById('regInterest').value,
-                pass: document.getElementById('regPass').value
-            };
-            
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = 'Creating Account...';
-            btn.disabled = true;
-
-            try {
-                // ✅ Use await for async register function from backend.js
-                const res = await register(data);
-                
-                console.log('📝 Register response:', res);
-                
-                if (res && res.success) {
-                    alert('✓ Registration Successful!\n\nYour account has been created. Please login.');
-                    toggleView('login');
-                    e.target.reset();
-                } else {
-                    alert(res?.message || 'Registration failed. Email might already exist.');
-                }
-            } catch (error) {
-                console.error('❌ Register error:', error);
-                alert('Connection error. Please try again.');
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
         }
 
-        // Allow Enter key to submit forms in modal
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('resetEmail').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') verifyEmailForReset();
-            });
+        // ============ M-PESA PAYMENT ============
+        // ✅ FIXED: Renamed to avoid conflict with backend.js function
+        
+        async function handleMpesaPaymentSubmit() {
+            const phone = document.getElementById('mpesaPhone').value.trim();
+            const statusDiv = document.getElementById('paymentStatus');
             
-            document.getElementById('newPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') completePasswordReset();
-            });
+            if (!phone || !phone.startsWith('254')) {
+                alert('Please enter a valid M-Pesa number (e.g., 254708374149)');
+                return;
+            }
             
-            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') completePasswordReset();
-            });
-        });
+            if (!currentBooking?.bookingId) {
+                alert('No booking found. Please create a booking first.');
+                return;
+            }
+            
+            // Show loading
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `
+                <div class="payment-loading">
+                    <div class="spinner"></div>
+                    <span>Sending payment request to ${phone}...</span>
+                </div>
+            `;
+            
+            try {
+                const amount = currentBooking.rate || 18000;
+                
+                // ✅ Now correctly calls backend.js initiateMpesaPayment function
+                const result = await initiateMpesaPayment(phone, amount, currentBooking.bookingId);
+                
+                console.log('💰 M-Pesa result:', result);
+                
+                if (result.success) {
+                    statusDiv.innerHTML = `
+                        <div class="payment-success">
+                            <strong>✓ Payment Request Sent!</strong><br>
+                            Check your phone for the M-Pesa prompt.<br>
+                            Enter PIN <strong>4321</strong> to confirm (sandbox test).
+                        </div>
+                    `;
+                    
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="payment-error">
+                            <strong>✗ Payment Failed</strong><br>
+                            ${result.error || result.message || 'Please try again.'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('❌ M-Pesa error:', error);
+                statusDiv.innerHTML = `
+                    <div class="payment-error">
+                        <strong>✗ Connection Error</strong><br>
+                        Please check your internet and try again.
+                    </div>
+                `;
+            }
+        }
+
+        // ============ PROFILE FUNCTIONS ============
+
+        function saveProfile() {
+            alert('Profile updates coming soon! This feature will sync with the backend.');
+        }
+
+        function changePassword() {
+            alert('Password change coming soon!');
+        }
     </script>
 </body>
 </html>
