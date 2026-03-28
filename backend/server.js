@@ -33,7 +33,7 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// Helper function for queries using pool
+// Helper function for queries
 function query(sql, params) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, (err, results) => {
@@ -185,7 +185,55 @@ app.post('/api/bookings', async (req, res) => {
     }
 });
 
-// ============ M-PESA ROUTES (INTACT!) ============
+// Get Users
+app.get('/api/users', async (req, res) => {
+    console.log('👥 Users request received');
+    try {
+        const results = await query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Users error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Inquiries
+app.get('/api/inquiries', async (req, res) => {
+    console.log('📩 Inquiries request received');
+    try {
+        const results = await query('SELECT * FROM inquiries ORDER BY created_at DESC');
+        res.json({ success: true, data: results });
+    } catch (err) {
+        console.error('❌ Inquiries error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create Inquiry
+app.post('/api/inquiries', async (req, res) => {
+    const { client_name, client_email, client_phone, destination, notes, source } = req.body;
+    
+    console.log('📝 Creating inquiry:', { client_name, client_email });
+    
+    if (!client_name || !client_email) {
+        return res.status(400).json({ error: 'Client name and email are required' });
+    }
+    
+    try {
+        const result = await query(
+            'INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)',
+            [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website']
+        );
+        
+        console.log('✅ Inquiry created:', result.insertId);
+        res.json({ success: true, inquiryId: result.insertId });
+    } catch (err) {
+        console.error('❌ Inquiry error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============ M-PESA ROUTES ============
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
