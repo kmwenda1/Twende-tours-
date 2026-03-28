@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const app = express();
 
-// CORS
+// ============ CORS CONFIGURATION ============
 app.use(cors({
     origin: '*',
     credentials: true,
@@ -14,7 +14,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve static files from current directory
+// ============ SERVE STATIC FILES ============
+app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.static(path.join(__dirname, '..')));
 
 // Serve client.html at root
@@ -22,7 +23,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../client.html'));
 });
 
-// Database connection pool
+// ============ DATABASE CONNECTION POOL ============
 const pool = mysql.createPool({
     connectionLimit: 10,
     uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
@@ -32,7 +33,7 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0
 });
 
-// Test connection
+// Test pool connection
 pool.getConnection((err, connection) => {
     if (err) {
         console.error('❌ Database pool connection failed:', err.message);
@@ -42,7 +43,7 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// Query helper
+// Helper function for queries using pool
 function query(sql, params) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, (err, results) => {
@@ -52,7 +53,7 @@ function query(sql, params) {
     });
 }
 
-// Health check
+// ============ HEALTH CHECK ============
 app.get('/health', async (req, res) => {
     try {
         await query('SELECT 1');
@@ -66,7 +67,6 @@ app.get('/health', async (req, res) => {
     }
 });
 
-// API info
 app.get('/api', (req, res) => {
     res.json({ 
         message: 'Twende Tours API',
@@ -74,6 +74,8 @@ app.get('/api', (req, res) => {
         endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/api/mpesa/stkpush', '/health']
     });
 });
+
+// ============ API ROUTES ============
 
 // Login
 app.post('/api/login', async (req, res) => {
@@ -241,7 +243,8 @@ app.post('/api/inquiries', async (req, res) => {
     }
 });
 
-// M-Pesa routes
+// ============ M-PESA ROUTES ============
+
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
 const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE || '174379';
@@ -264,6 +267,7 @@ async function getMpesaToken() {
     }
 }
 
+// STK Push
 app.post('/api/mpesa/stkpush', async (req, res) => {
     try {
         const { phone, amount, booking_id } = req.body;
@@ -319,6 +323,7 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
     }
 });
 
+// Check Payment Status
 app.post('/api/mpesa/check-status', async (req, res) => {
     try {
         const { checkoutRequestID } = req.body;
@@ -362,6 +367,7 @@ app.post('/api/mpesa/check-status', async (req, res) => {
     }
 });
 
+// M-Pesa Callback
 app.post('/api/mpesa/callback', express.json(), (req, res) => {
     console.log('📥 M-Pesa Callback received:', JSON.stringify(req.body, null, 2));
     
@@ -383,7 +389,8 @@ app.post('/api/mpesa/callback', express.json(), (req, res) => {
     res.json({ ResultCode: 0, ResultDesc: 'Success' });
 });
 
-// Error handlers
+// ============ ERROR HANDLERS ============
+
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);
 });
@@ -392,7 +399,7 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('❌ Unhandled Rejection:', reason);
 });
 
-// Start server
+// ============ START SERVER ============
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
