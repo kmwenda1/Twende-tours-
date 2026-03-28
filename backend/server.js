@@ -61,7 +61,7 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Twende Tours API',
         status: 'running',
-        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/mpesa/stkpush', '/health']
+        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/api/mpesa/stkpush', '/health']
     });
 });
 
