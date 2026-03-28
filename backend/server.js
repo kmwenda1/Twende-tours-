@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ============ DATABASE CONNECTION POOL ============
+// ============ DATABASE CONNECTION POOL (FIXES TIMEOUT) ============
 const pool = mysql.createPool({
     connectionLimit: 10,
     uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
@@ -33,7 +33,7 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// Helper function for queries
+// Helper function for queries using pool
 function query(sql, params) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, (err, results) => {
@@ -149,7 +149,7 @@ app.get('/api/fleet', async (req, res) => {
     }
 });
 
-// Get Bookings
+// Get Bookings (For Staff Dashboard)
 app.get('/api/bookings', async (req, res) => {
     console.log('📋 Bookings request received');
     try {
@@ -161,11 +161,11 @@ app.get('/api/bookings', async (req, res) => {
     }
 });
 
-// Create Booking
+// Create Booking (Safari Booking - THIS IS WHAT YOU NEED!)
 app.post('/api/bookings', async (req, res) => {
     const { user_id, vehicle_id, destination, start_date, end_date, travelers, notes, amount } = req.body;
     
-    console.log('📥 Creating booking:', { user_id, vehicle_id, destination, amount });
+    console.log('📥 Creating safari booking:', { user_id, vehicle_id, destination, amount });
     
     if (!user_id || !vehicle_id) {
         return res.status(400).json({ error: 'user_id and vehicle_id are required' });
@@ -177,15 +177,44 @@ app.post('/api/bookings', async (req, res) => {
             [user_id, vehicle_id, destination, start_date, end_date, travelers || 1, notes || '', amount || 0]
         );
         
-        console.log('✅ Booking created:', result.insertId);
-        res.json({ success: true, bookingId: result.insertId });
+        console.log('✅ Safari booking created:', result.insertId);
+        res.json({ 
+            success: true, 
+            bookingId: result.insertId,
+            message: 'Booking created successfully! Awaiting staff approval.'
+        });
     } catch (err) {
         console.error('❌ Booking error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Get Users
+// Update Booking Status (For Staff Approval)
+app.put('/api/bookings/:id/status', async (req, res) => {
+    const { status } = req.body;
+    const { id } = req.params;
+    
+    console.log('🔄 Updating booking status:', id, status);
+    
+    try {
+        await query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+        
+        // If status is Confirmed, also update fleet status to Booked
+        if (status === 'Confirmed') {
+            await query(
+                'UPDATE fleet SET status = "Booked" WHERE id = (SELECT vehicle_id FROM bookings WHERE id = ?)',
+                [id]
+            );
+        }
+        
+        res.json({ success: true, message: 'Booking status updated' });
+    } catch (err) {
+        console.error('❌ Update booking error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Users (For Staff Dashboard)
 app.get('/api/users', async (req, res) => {
     console.log('👥 Users request received');
     try {
@@ -197,7 +226,7 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
-// Get Inquiries
+// Get Inquiries (For Staff Dashboard)
 app.get('/api/inquiries', async (req, res) => {
     console.log('📩 Inquiries request received');
     try {
@@ -233,7 +262,7 @@ app.post('/api/inquiries', async (req, res) => {
     }
 });
 
-// ============ M-PESA ROUTES ============
+// ============ M-PESA ROUTES (INTACT!) ============
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
