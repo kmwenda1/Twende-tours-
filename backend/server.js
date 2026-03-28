@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ============ DATABASE CONNECTION ============
+// ============ DATABASE CONNECTION POOL ============
 const pool = mysql.createPool({
     connectionLimit: 10,
     uri: process.env.DATABASE_URL || process.env.MYSQL_URL,
@@ -33,7 +33,7 @@ pool.getConnection((err, connection) => {
     }
 });
 
-// Helper function for queries
+// Helper function for queries using pool
 function query(sql, params) {
     return new Promise((resolve, reject) => {
         pool.query(sql, params, (err, results) => {
@@ -61,7 +61,7 @@ app.get('/', (req, res) => {
     res.json({ 
         message: 'Twende Tours API',
         status: 'running',
-        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/users', '/api/inquiries', '/health']
+        endpoints: ['/api/fleet', '/api/login', '/api/bookings', '/api/mpesa/stkpush', '/health']
     });
 });
 
@@ -185,57 +185,7 @@ app.post('/api/bookings', async (req, res) => {
     }
 });
 
-// Get Users - FIXED ENDPOINT
-app.get('/api/users', async (req, res) => {
-    console.log('👥 Users request received');
-    try {
-        const results = await query('SELECT id, name, email, role, phone, interest, is_approved, created_at FROM users ORDER BY created_at DESC');
-        console.log('✅ Users fetched:', results.length);
-        res.json({ success: true, data: results });
-    } catch (err) {
-        console.error('❌ Users error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Get Inquiries - FIXED ENDPOINT
-app.get('/api/inquiries', async (req, res) => {
-    console.log('📩 Inquiries request received');
-    try {
-        const results = await query('SELECT * FROM inquiries ORDER BY created_at DESC');
-        console.log('✅ Inquiries fetched:', results.length);
-        res.json({ success: true, data: results });
-    } catch (err) {
-        console.error('❌ Inquiries error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Create Inquiry
-app.post('/api/inquiries', async (req, res) => {
-    const { client_name, client_email, client_phone, destination, notes, source } = req.body;
-    
-    console.log('📝 Creating inquiry:', { client_name, client_email });
-    
-    if (!client_name || !client_email) {
-        return res.status(400).json({ error: 'Client name and email are required' });
-    }
-    
-    try {
-        const result = await query(
-            'INSERT INTO inquiries (client_name, client_email, client_phone, destination, notes, source) VALUES (?, ?, ?, ?, ?, ?)',
-            [client_name, client_email, client_phone || '', destination || '', notes || '', source || 'Website']
-        );
-        
-        console.log('✅ Inquiry created:', result.insertId);
-        res.json({ success: true, inquiryId: result.insertId });
-    } catch (err) {
-        console.error('❌ Inquiry error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============ M-PESA ROUTES ============
+// ============ M-PESA ROUTES (INTACT!) ============
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY || 'm7NA2lgANcgBc0PqJP16xjxBcOZBM127jIBr3P7Sy5NF1O9r';
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET || 'MXu3cCruzCApzb1Ijaxx6tAKMWyCod85haJidC3waf2PwD6AVVnCVASzmmb3IZdJ';
@@ -259,6 +209,7 @@ async function getMpesaToken() {
     }
 }
 
+// STK Push - DARAJA API (INTACT!)
 app.post('/api/mpesa/stkpush', async (req, res) => {
     try {
         const { phone, amount, booking_id } = req.body;
@@ -266,6 +217,8 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
         if (!phone || !amount || !booking_id) {
             return res.status(400).json({ error: 'phone, amount, and booking_id are required' });
         }
+        
+        console.log('💰 M-Pesa STK Push:', phone, amount, booking_id);
         
         const accessToken = await getMpesaToken();
         if (!accessToken) {
@@ -310,6 +263,72 @@ app.post('/api/mpesa/stkpush', async (req, res) => {
         console.error('❌ STK Push error:', error.response?.data || error.message);
         res.status(500).json({ error: 'STK Push failed', details: error.response?.data || error.message });
     }
+});
+
+// Check Payment Status - DARAJA API (INTACT!)
+app.post('/api/mpesa/check-status', async (req, res) => {
+    try {
+        const { checkoutRequestID } = req.body;
+        
+        if (!checkoutRequestID) {
+            return res.status(400).json({ error: 'checkoutRequestID is required' });
+        }
+        
+        const accessToken = await getMpesaToken();
+        if (!accessToken) {
+            return res.status(500).json({ error: 'Failed to get access token' });
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
+        const password = Buffer.from(`${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`).toString('base64');
+        
+        const axios = require('axios');
+        
+        const statusResponse = await axios.post(
+            'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+            {
+                BusinessShortCode: MPESA_SHORTCODE,
+                Password: password,
+                Timestamp: timestamp,
+                CheckoutRequestID: checkoutRequestID
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 15000
+            }
+        );
+        
+        res.json({ success: true, status: statusResponse.data });
+        
+    } catch (error) {
+        console.error('❌ Status check error:', error);
+        res.status(500).json({ error: 'Status check failed', details: error.response?.data || error.message });
+    }
+});
+
+// M-Pesa Callback - DARAJA API (INTACT!)
+app.post('/api/mpesa/callback', express.json(), (req, res) => {
+    console.log('📥 M-Pesa Callback received:', JSON.stringify(req.body, null, 2));
+    
+    const { Body } = req.body;
+    if (!Body || !Body.stkCallback) {
+        return res.status(400).json({ error: 'Invalid callback format' });
+    }
+    
+    const { stkCallback } = Body;
+    const { CheckoutRequestID, ResultCode, ResultDesc } = stkCallback;
+    
+    const status = ResultCode === '0' ? 'Success' : 'Failed';
+    
+    query(
+        'UPDATE payments SET status = ?, reference = ? WHERE reference = ?',
+        [status, ResultDesc, CheckoutRequestID]
+    ).catch(err => console.error('❌ Callback DB update error:', err));
+    
+    res.json({ ResultCode: 0, ResultDesc: 'Success' });
 });
 
 // ============ ERROR HANDLERS ============
