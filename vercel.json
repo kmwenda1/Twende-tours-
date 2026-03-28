@@ -1,16 +1,1 @@
-{ 
-  "routes": [ 
-    { 
-      "src": "/api/(.*)", 
-      "dest": "backend/$1" 
-    }, 
-    { 
-      "src": "/(.*)\.html", 
-      "dest": "$1.html" 
-    }, 
-    { 
-      "src": "/(.*)\.css", 
-      "dest": "$1.css" 
-    } 
-  ] 
-}
+{"version": 2, "buildCommand": "echo 'Build complete'", "builds": [{"src": "backend/server.js", "use": "@vercel/node"}], "routes": [{"src": "/api/(.*)", "dest": "backend/server.js"}, {"src": "/(.*)", "dest": "/index.html"}]}
