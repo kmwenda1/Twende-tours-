@@ -360,6 +360,7 @@ const seedData = {
     { id: 105, name: 'Toyota Hiace', type: 'Bus', rate: 22000, status: 'Available', seats: 14, bags: 10, image: '/public/fleet/images/toyota-hiace.jpg', image_url: '/public/fleet/images/toyota-hiace.jpg', description: 'Large capacity van' },
     { id: 106, name: 'Land Cruiser VX', type: 'SUV', rate: 40000, status: 'Maintenance', seats: 7, bags: 7, image: '/public/fleet/images/land-cruiser-vx.jpg', image_url: '/public/fleet/images/land-cruiser-vx.jpg', description: 'Top luxury SUV' }
 ],
+    
     inquiries: [],
     bookings: [],
     payments: []

@@ -89,16 +89,55 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// Temporary Admin Creation Endpoint
+app.post('/api/create-admin', async (req, res) => {
+    try {
+        const { email, password, name } = req.body;
+        
+        // Hash the password properly
+        const hashedPassword = await bcrypt.hash(password || 'admin123', 10);
+        
+        // Insert into database
+        const result = await query(
+            'INSERT INTO users (name, email, password, role, phone, interest, is_approved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
+            [name || 'Admin', email || 'admin@twende.com', hashedPassword, 'manager', '+254700000000', 'Tours', 1]
+        );
+        
+        res.json({ success: true, message: 'Admin created', userId: result.insertId, email, password });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Register
 // Register
 app.post('/api/register', async (req, res) => {
-    const { name, email, password, phone, interest } = req.body;
+    const { name, email, password, phone, interest, role } = req.body;
     if (!name || !email || !password) return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
-    console.log('📝 Registration attempt:', email);
+    console.log('📝 Registration attempt:', email, 'as', role);
+    
     try {
+        // Validate role to prevent injection attacks
+        const validRoles = ['client', 'staff', 'manager'];
+        const userRole = validRoles.includes(role) ? role : 'client';
+        
+        // Auto-approve clients, require approval for staff/manager
+        const isApproved = userRole === 'client' ? 1 : 0;
+        
         const hashedPassword = await bcrypt.hash(password, 10);
-        await query('INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, email, hashedPassword, 'client', phone || '', interest || '', true]);
-        console.log('✅ Registration successful:', email);
-        res.json({ success: true, message: 'Registration successful' });
+        
+        await query(
+            'INSERT INTO users (name, email, password, role, phone, interest, is_approved) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, email, hashedPassword, userRole, phone || '', interest || '', isApproved]
+        );
+        
+        console.log('✅ Registration successful:', email, 'as', userRole);
+        
+        if (userRole !== 'client') {
+            res.json({ success: true, message: 'Registration successful. Your account is pending admin approval.' });
+        } else {
+            res.json({ success: true, message: 'Registration successful' });
+        }
     } catch (err) {
         console.error('❌ Register error:', err);
         if (err.code === 'ER_DUP_ENTRY') return res.json({ success: false, message: 'Email already exists' });
@@ -182,6 +221,17 @@ app.post('/api/inquiries', async (req, res) => {
         console.error('❌ Inquiry error:', err);
         res.status(500).json({ error: err.message });
     }
+});
+// Add this AFTER the other routes (around line 185, before M-PESA routes):
+
+// ============ STATIC FILES / IMAGES ============
+app.get('/public/fleet/images/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // Security: only allow jpg/png files
+    if (!/^[\w\-]+\.(jpg|jpeg|png)$/i.test(filename)) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    res.sendFile(path.join(__dirname, `../public/fleet/images/${filename}`));
 });
 
 // ============ M-PESA ROUTES ============
