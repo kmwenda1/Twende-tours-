@@ -309,6 +309,9 @@ async function updateInquiryStatus(inquiryId, status, assignedTo = null) {
 // Get Dashboard Stats
 async function getDashboardStats() {
     try {
+        const currentUser = getCurrentUser();  // ✅ GET CURRENT USER
+        if (!currentUser) return {};
+        
         const [bookings, users, fleet, inquiries] = await Promise.all([
             getBookings(),
             getUsers(),
@@ -316,14 +319,17 @@ async function getDashboardStats() {
             getInquiries()
         ]);
         
-        const revenue = bookings
+        // ✅ FILTER BOOKINGS BY CURRENT USER
+        const userBookings = bookings.filter(b => b.user_id === currentUser.id);
+        
+        const revenue = userBookings
             .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
             .reduce((sum, b) => sum + (b.amount || 0), 0);
         
         return {
             totalRevenue: revenue,
-            totalBookings: bookings.length,
-            confirmedBookings: bookings.filter(b => b.status === 'Confirmed').length,
+            totalBookings: userBookings.length,  // ✅ USES FILTERED BOOKINGS
+            confirmedBookings: userBookings.filter(b => b.status === 'Confirmed').length,
             totalUsers: users.length,
             pendingApprovals: users.filter(u => u.role === 'staff' && !u.is_approved).length,
             availableFleet: fleet.filter(v => v.status === 'Available').length,
