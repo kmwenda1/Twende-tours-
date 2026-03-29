@@ -341,30 +341,34 @@
         }
 
         function renderFleet(vehicles) {
-            const fleetGrid = document.getElementById('fleetGrid');
-            if (!fleetGrid) return;
-            fleetGrid.innerHTML = vehicles.map(vehicle => `
-                <div class="vehicle-card">
-                    <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${vehicle.name}" class="vehicle-image" onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
-                    <div class="vehicle-info">
-                        <h3>${vehicle.name}</h3>
-                        <p class="vehicle-type">${vehicle.type}</p>
-                        <p class="vehicle-description">${vehicle.description || 'Premium safari vehicle with excellent game viewing capabilities.'}</p>
-                        <div class="vehicle-specs">
-                            <span><i data-lucide="users" width="16"></i> ${vehicle.seats || 6} seats</span>
-                            <span><i data-lucide="briefcase" width="16"></i> ${vehicle.bags || 4} bags</span>
-                        </div>
-                        <div class="vehicle-rate">
-                            <span class="rate-amount">KES ${vehicle.rate?.toLocaleString() || '0'}</span>
-                            <span class="rate-period">per day</span>
-                        </div>
-                        <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" ${vehicle.status !== 'Available' ? 'disabled' : ''}>
-                            ${vehicle.status === 'Available' ? 'Book Now' : vehicle.status}
-                        </button>
-                    </div>
-                </div>`).join('');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
+    const fleetGrid = document.getElementById('fleetGrid');
+    if (!fleetGrid) return;
+    fleetGrid.innerHTML = vehicles.map(vehicle => `
+        <div class="vehicle-card">
+            <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(vehicle.name)}" 
+                 alt="${vehicle.name}" 
+                 class="vehicle-image" 
+                 loading="lazy"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=' + encodeURIComponent('${vehicle.name}')">
+            <div class="vehicle-info">
+                <h3>${vehicle.name}</h3>
+                <p class="vehicle-type">${vehicle.type}</p>
+                <p class="vehicle-description">${vehicle.description || 'Premium safari vehicle with excellent game viewing capabilities.'}</p>
+                <div class="vehicle-specs">
+                    <span><i data-lucide="users" width="16"></i> ${vehicle.seats || 6} seats</span>
+                    <span><i data-lucide="briefcase" width="16"></i> ${vehicle.bags || 4} bags</span>
+                </div>
+                <div class="vehicle-rate">
+                    <span class="rate-amount">KES ${vehicle.rate?.toLocaleString() || '0'}</span>
+                    <span class="rate-period">per day</span>
+                </div>
+                <button class="btn btn-primary" onclick="bookVehicle(${vehicle.id})" ${vehicle.status !== 'Available' ? 'disabled' : ''}>
+                    ${vehicle.status === 'Available' ? 'Book Now' : vehicle.status}
+                </button>
+            </div>
+        </div>`).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
 
         function filterFleet(filter) {
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
