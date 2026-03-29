@@ -340,16 +340,16 @@
             }
         }
 
-        function renderFleet(vehicles) {
+ function renderFleet(vehicles) {
     const fleetGrid = document.getElementById('fleetGrid');
     if (!fleetGrid) return;
     fleetGrid.innerHTML = vehicles.map(vehicle => `
         <div class="vehicle-card">
-            <img src="${vehicle.image_url || vehicle.image || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(vehicle.name)}" 
+            <img src="${vehicle.image_url || vehicle.image || '/public/fleet/images/placeholder.jpg'}" 
                  alt="${vehicle.name}" 
                  class="vehicle-image" 
                  loading="lazy"
-                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=' + encodeURIComponent('${vehicle.name}')">
+                 onerror="this.src='/public/fleet/images/placeholder.jpg'">
             <div class="vehicle-info">
                 <h3>${vehicle.name}</h3>
                 <p class="vehicle-type">${vehicle.type}</p>

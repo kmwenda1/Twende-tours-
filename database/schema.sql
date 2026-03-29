@@ -78,12 +78,12 @@ INSERT INTO users (name, email, password, role, is_approved)
 VALUES ('Manager', 'admin@twende.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'manager', TRUE)
 ON DUPLICATE KEY UPDATE name=name;
 
--- Insert Sample Fleet (with proper working image URLs)
+-- Insert Sample Fleet (LOCAL PATHS)
 INSERT INTO fleet (name, type, rate, status, seats, bags, image_url, description) VALUES
-('Safari Van', 'Van', 18000, 'Available', 8, 8, 'https://images.unsplash.com/photo-1566008885171-2a2dd16688a3?w=400&h=300&fit=crop', 'Perfect for budget-friendly group safaris'),
-('Land Cruiser Prado', 'SUV', 25000, 'Available', 6, 6, 'https://images.unsplash.com/photo-1596707328637-409869323520?w=400&h=300&fit=crop', 'Comfortable mid-size SUV'),
-('Land Cruiser 70', '4x4', 30000, 'Booked', 7, 4, 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop', 'Classic rugged 4x4'),
-('Land Cruiser V8', '4x4', 35000, 'Available', 6, 6, 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400&h=300&fit=crop', 'Luxury safari vehicle'),
-('Toyota Hiace', 'Bus', 22000, 'Available', 14, 10, 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=300&fit=crop', 'Large capacity van'),
-('Land Cruiser VX', 'SUV', 40000, 'Maintenance', 7, 7, 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop', 'Top-of-the-line luxury SUV')
+('Safari Van', 'Van', 18000, 'Available', 8, 8, '/public/fleet/images/safari-van.jpg', 'Perfect for budget-friendly group safaris'),
+('Land Cruiser Prado', 'SUV', 25000, 'Available', 6, 6, '/public/fleet/images/land-cruiser-prado.jpg', 'Comfortable mid-size SUV'),
+('Land Cruiser 70', '4x4', 30000, 'Booked', 7, 4, '/public/fleet/images/land-cruiser-70.jpg', 'Classic rugged 4x4'),
+('Land Cruiser V8', '4x4', 35000, 'Available', 6, 6, '/public/fleet/images/land-cruiser-v8.jpg', 'Luxury safari vehicle'),
+('Toyota Hiace', 'Bus', 22000, 'Available', 14, 10, '/public/fleet/images/toyota-hiace.jpg', 'Large capacity van'),
+('Land Cruiser VX', 'SUV', 40000, 'Maintenance', 7, 7, '/public/fleet/images/land-cruiser-vx.jpg', 'Top-of-the-line luxury SUV')
 ON DUPLICATE KEY UPDATE image_url=VALUES(image_url);

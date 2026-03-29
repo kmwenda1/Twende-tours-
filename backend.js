@@ -353,12 +353,12 @@ const seedData = {
         { id: 3, name: 'Client User', email: 'client@twende.com', pass: '123', role: 'client', interest: 'Safari', phone: '+254 700 000 000' }
     ],
     fleet: [
-    { id: 101, name: 'Safari Van', type: 'Van', rate: 18000, status: 'Available', seats: 8, bags: 8, image: 'https://images.unsplash.com/photo-1566008885171-2a2dd16688a3?w=400&h=300&fit=crop', description: 'Budget-friendly group safaris' },
-    { id: 102, name: 'Land Cruiser Prado', type: 'SUV', rate: 25000, status: 'Available', seats: 6, bags: 6, image: 'https://images.unsplash.com/photo-1596707328637-409869323520?w=400&h=300&fit=crop', description: 'Comfortable mid-size SUV' },
-    { id: 103, name: 'Land Cruiser 70', type: '4x4', rate: 30000, status: 'Booked', seats: 7, bags: 4, image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop', description: 'Classic rugged 4x4' },
-    { id: 104, name: 'Land Cruiser V8', type: '4x4', rate: 35000, status: 'Available', seats: 6, bags: 6, image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400&h=300&fit=crop', description: 'Luxury safari vehicle' },
-    { id: 105, name: 'Toyota Hiace', type: 'Bus', rate: 22000, status: 'Available', seats: 14, bags: 10, image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=300&fit=crop', description: 'Large capacity van' },
-    { id: 106, name: 'Land Cruiser VX', type: 'SUV', rate: 40000, status: 'Maintenance', seats: 7, bags: 7, image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop', description: 'Top luxury SUV' }
+    { id: 101, name: 'Safari Van', type: 'Van', rate: 18000, status: 'Available', seats: 8, bags: 8, image: '/public/fleet/images/safari-van.jpg', image_url: '/public/fleet/images/safari-van.jpg', description: 'Budget-friendly group safaris' },
+    { id: 102, name: 'Land Cruiser Prado', type: 'SUV', rate: 25000, status: 'Available', seats: 6, bags: 6, image: '/public/fleet/images/land-cruiser-prado.jpg', image_url: '/public/fleet/images/land-cruiser-prado.jpg', description: 'Comfortable mid-size SUV' },
+    { id: 103, name: 'Land Cruiser 70', type: '4x4', rate: 30000, status: 'Booked', seats: 7, bags: 4, image: '/public/fleet/images/land-cruiser-70.jpg', image_url: '/public/fleet/images/land-cruiser-70.jpg', description: 'Classic rugged 4x4' },
+    { id: 104, name: 'Land Cruiser V8', type: '4x4', rate: 35000, status: 'Available', seats: 6, bags: 6, image: '/public/fleet/images/land-cruiser-v8.jpg', image_url: '/public/fleet/images/land-cruiser-v8.jpg', description: 'Luxury safari vehicle' },
+    { id: 105, name: 'Toyota Hiace', type: 'Bus', rate: 22000, status: 'Available', seats: 14, bags: 10, image: '/public/fleet/images/toyota-hiace.jpg', image_url: '/public/fleet/images/toyota-hiace.jpg', description: 'Large capacity van' },
+    { id: 106, name: 'Land Cruiser VX', type: 'SUV', rate: 40000, status: 'Maintenance', seats: 7, bags: 7, image: '/public/fleet/images/land-cruiser-vx.jpg', image_url: '/public/fleet/images/land-cruiser-vx.jpg', description: 'Top luxury SUV' }
 ],
     inquiries: [],
     bookings: [],
