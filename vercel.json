@@ -1,15 +1,14 @@
 {
   "version": 2,
   "buildCommand": "echo 'static site'",
-  "env": {},
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://twende-tours-production.up.railway.app/api/$1"
+      "source": "/api/(.*)",
+      "destination": "https://twende-tours-production.up.railway.app/api/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
